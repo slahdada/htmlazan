@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>تعديل أوقات الصلاة</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode:"class",
+    theme:{ extend:{
+      colors:{
+        "secondary":       "#eab308",
+        "background":      "#111714",
+        "surface-variant": "#162820",
+        "on-surface-v":    "#7fb69a",
+        "primary":         "#0f2a20",
+        "primary-border":  "#1e4030",
+        "primary-light":   "#059669",
+      },
+      fontFamily:{
+        "numeral-display":["Manrope"],
+        "body-md":["Manrope"],
+        "headline-md":["Noto Serif"],
+      }
+    }}
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  body { min-height:100dvh; background:#111714; }
+
+  /* Stepper button */
+  .step-btn {
+    width:40px; height:40px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    border:1.5px solid #1e4030;
+    background:#162820;
+    color:#eab308;
+    font-size:22px; line-height:1;
+    cursor:pointer;
+    transition:all .12s;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .step-btn:active { transform:scale(.88); background:#1e4030; }
+  .step-btn.minus { color:#7fb69a; }
+
+  /* Offset badge */
+  .offset-badge {
+    min-width:52px; height:40px;
+    border-radius:12px;
+    background:#0f2a20;
+    border:1.5px solid #1e4030;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:16px;
+    transition: background .2s, border-color .2s, color .2s;
+  }
+  .offset-badge.positive { background:#14532d/20; border-color:#16a34a; color:#4ade80; }
+  .offset-badge.negative { background:#7f1d1d/20; border-color:#dc2626; color:#f87171; }
+  .offset-badge.zero     { color:#7fb69a; }
+
+  /* Prayer row */
+  .prayer-row {
+    background:#162820;
+    border:1px solid #1e4030;
+    border-radius:20px;
+    padding:16px;
+    transition:border-color .2s;
+  }
+  .prayer-row.modified { border-color:#eab308/50; border-color:rgba(234,179,8,.4); }
+
+  /* Toast */
+  #toast {
+    position:fixed; bottom:120px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#162820; border:1px solid #1e4030; border-radius:16px;
+    padding:12px 20px; color:#fff; font-size:14px; font-weight:600;
+    opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap; z-index:200;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Confirm dialog */
+  #confirmDialog { backdrop-filter:blur(8px); }
+</style>
+</head>
+<body class="bg-background text-white font-body-md">
+
+<!-- ── Header ── -->
+<header class="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-primary-border flex items-center gap-3 px-4 py-4">
+  <a href="settings.html" class="w-9 h-9 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-v hover:bg-primary-border active:scale-90 transition-all">
+    <span class="material-symbols-outlined text-xl">arrow_forward</span>
+  </a>
+  <h1 class="font-headline-md text-lg text-secondary font-bold flex-1 text-center ml-[-36px]">تعديل أوقات الصلاة</h1>
+</header>
+
+<main class="pb-36 pt-5 px-4 max-w-md mx-auto space-y-5">
+
+  <!-- ── Info Banner ── -->
+  <div class="bg-secondary/8 border border-secondary/20 rounded-2xl p-4 flex gap-3 items-start">
+    <span class="material-symbols-outlined text-secondary text-xl mt-0.5 flex-shrink-0" style="font-variation-settings:'FILL' 1">info</span>
+    <p class="text-white/80 text-sm leading-relaxed">
+      يمكنك إضافة أو إنقاص دقائق من وقت كل صلاة للتوافق مع توقيتك المحلي أو مذهبك الفقهي.
+    </p>
+  </div>
+
+  <!-- ── Prayer Rows ── -->
+  <div class="space-y-3" id="prayerRows">
+
+    <!-- Fajr -->
+    <div class="prayer-row" id="row-Fajr">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+            <span class="material-symbols-outlined text-blue-300 text-xl" style="font-variation-settings:'FILL' 1">wb_twilight</span>
+          </div>
+          <div>
+            <p class="font-bold text-[15px]">الفجر</p>
+            <p class="text-on-surface-v text-xs" id="base-Fajr">--:--</p>
+          </div>
+        </div>
+        <div class="text-left">
+          <p class="text-secondary font-numeral-display font-bold text-lg" id="final-Fajr">--:--</p>
+          <p class="text-on-surface-v text-[10px] text-left">الوقت الفعلي</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <button class="step-btn minus" onclick="adjust('Fajr',-1)">−</button>
+        <div class="flex items-center gap-2">
+          <button class="step-btn minus text-sm" onclick="adjust('Fajr',-5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">−5</button>
+          <div class="offset-badge zero" id="badge-Fajr">0 د</div>
+          <button class="step-btn text-sm" onclick="adjust('Fajr',+5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">+5</button>
+        </div>
+        <button class="step-btn" onclick="adjust('Fajr',+1)">+</button>
+      </div>
+    </div>
+
+    <!-- Dhuhr -->
+    <div class="prayer-row" id="row-Dhuhr">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center">
+            <span class="material-symbols-outlined text-yellow-300 text-xl" style="font-variation-settings:'FILL' 1">light_mode</span>
+          </div>
+          <div>
+            <p class="font-bold text-[15px]">الظهر</p>
+            <p class="text-on-surface-v text-xs" id="base-Dhuhr">--:--</p>
+          </div>
+        </div>
+        <div class="text-left">
+          <p class="text-secondary font-numeral-display font-bold text-lg" id="final-Dhuhr">--:--</p>
+          <p class="text-on-surface-v text-[10px] text-left">الوقت الفعلي</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <button class="step-btn minus" onclick="adjust('Dhuhr',-1)">−</button>
+        <div class="flex items-center gap-2">
+          <button class="step-btn minus text-sm" onclick="adjust('Dhuhr',-5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">−5</button>
+          <div class="offset-badge zero" id="badge-Dhuhr">0 د</div>
+          <button class="step-btn text-sm" onclick="adjust('Dhuhr',+5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">+5</button>
+        </div>
+        <button class="step-btn" onclick="adjust('Dhuhr',+1)">+</button>
+      </div>
+    </div>
+
+    <!-- Asr -->
+    <div class="prayer-row" id="row-Asr">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <span class="material-symbols-outlined text-orange-300 text-xl" style="font-variation-settings:'FILL' 1">wb_sunny</span>
+          </div>
+          <div>
+            <p class="font-bold text-[15px]">العصر</p>
+            <p class="text-on-surface-v text-xs" id="base-Asr">--:--</p>
+          </div>
+        </div>
+        <div class="text-left">
+          <p class="text-secondary font-numeral-display font-bold text-lg" id="final-Asr">--:--</p>
+          <p class="text-on-surface-v text-[10px] text-left">الوقت الفعلي</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <button class="step-btn minus" onclick="adjust('Asr',-1)">−</button>
+        <div class="flex items-center gap-2">
+          <button class="step-btn minus text-sm" onclick="adjust('Asr',-5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">−5</button>
+          <div class="offset-badge zero" id="badge-Asr">0 د</div>
+          <button class="step-btn text-sm" onclick="adjust('Asr',+5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">+5</button>
+        </div>
+        <button class="step-btn" onclick="adjust('Asr',+1)">+</button>
+      </div>
+    </div>
+
+    <!-- Maghrib -->
+    <div class="prayer-row" id="row-Maghrib">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center">
+            <span class="material-symbols-outlined text-red-300 text-xl" style="font-variation-settings:'FILL' 1">wb_twilight</span>
+          </div>
+          <div>
+            <p class="font-bold text-[15px]">المغرب</p>
+            <p class="text-on-surface-v text-xs" id="base-Maghrib">--:--</p>
+          </div>
+        </div>
+        <div class="text-left">
+          <p class="text-secondary font-numeral-display font-bold text-lg" id="final-Maghrib">--:--</p>
+          <p class="text-on-surface-v text-[10px] text-left">الوقت الفعلي</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <button class="step-btn minus" onclick="adjust('Maghrib',-1)">−</button>
+        <div class="flex items-center gap-2">
+          <button class="step-btn minus text-sm" onclick="adjust('Maghrib',-5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">−5</button>
+          <div class="offset-badge zero" id="badge-Maghrib">0 د</div>
+          <button class="step-btn text-sm" onclick="adjust('Maghrib',+5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">+5</button>
+        </div>
+        <button class="step-btn" onclick="adjust('Maghrib',+1)">+</button>
+      </div>
+    </div>
+
+    <!-- Isha -->
+    <div class="prayer-row" id="row-Isha">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+            <span class="material-symbols-outlined text-indigo-300 text-xl" style="font-variation-settings:'FILL' 1">dark_mode</span>
+          </div>
+          <div>
+            <p class="font-bold text-[15px]">العشاء</p>
+            <p class="text-on-surface-v text-xs" id="base-Isha">--:--</p>
+          </div>
+        </div>
+        <div class="text-left">
+          <p class="text-secondary font-numeral-display font-bold text-lg" id="final-Isha">--:--</p>
+          <p class="text-on-surface-v text-[10px] text-left">الوقت الفعلي</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <button class="step-btn minus" onclick="adjust('Isha',-1)">−</button>
+        <div class="flex items-center gap-2">
+          <button class="step-btn minus text-sm" onclick="adjust('Isha',-5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">−5</button>
+          <div class="offset-badge zero" id="badge-Isha">0 د</div>
+          <button class="step-btn text-sm" onclick="adjust('Isha',+5)" style="width:34px;height:34px;font-size:12px;border-radius:10px">+5</button>
+        </div>
+        <button class="step-btn" onclick="adjust('Isha',+1)">+</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Actions ── -->
+  <div class="flex gap-3 pt-2">
+    <button onclick="confirmReset()"
+      class="flex-1 flex items-center justify-center gap-2 bg-surface-variant border border-primary-border rounded-2xl py-4 text-on-surface-v font-bold text-sm hover:border-red-500/40 hover:text-red-400 active:scale-95 transition-all">
+      <span class="material-symbols-outlined text-xl">restart_alt</span>
+      إعادة الضبط
+    </button>
+    <button onclick="saveAll()"
+      class="flex-1 flex items-center justify-center gap-2 bg-secondary rounded-2xl py-4 text-black font-bold text-sm active:scale-95 transition-all shadow-[0_0_20px_rgba(234,179,8,.3)]">
+      <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1">check_circle</span>
+      حفظ التعديلات
+    </button>
+  </div>
+
+  <!-- ── Method Section ── -->
+  <div class="mt-4">
+    <p class="text-on-surface-v text-xs font-bold tracking-widest px-1 mb-3 uppercase">طريقة الحساب</p>
+    <div class="bg-surface-variant border border-primary-border rounded-2xl p-4 space-y-3">
+      <p class="text-white/70 text-sm">اختر طريقة الحساب المناسبة لبلدك</p>
+      <div id="methodList" class="space-y-2">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Toast ── -->
+<div id="toast">✅ تم الحفظ بنجاح</div>
+
+<!-- ── Confirm Reset Dialog ── -->
+<div id="confirmDialog" class="fixed inset-0 z-[100] bg-black/70 hidden flex items-end justify-center p-4">
+  <div class="w-full max-w-sm bg-surface-variant border border-primary-border rounded-3xl p-6 space-y-4">
+    <div class="text-center">
+      <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-3">
+        <span class="material-symbols-outlined text-red-400 text-3xl" style="font-variation-settings:'FILL' 1">restart_alt</span>
+      </div>
+      <h3 class="font-bold text-lg text-white">إعادة ضبط التعديلات؟</h3>
+      <p class="text-on-surface-v text-sm mt-1">سيتم حذف جميع التعديلات اليدوية وإعادة الأوقات لقيمها الأصلية.</p>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeConfirm()" class="flex-1 bg-primary-border rounded-2xl py-3 text-on-surface-v font-bold active:scale-95 transition-all">إلغاء</button>
+      <button onclick="doReset()"      class="flex-1 bg-red-600 rounded-2xl py-3 text-white font-bold active:scale-95 transition-all">إعادة الضبط</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════
+const PRAYERS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
+
+const offsets = {};
+const baseTimes = {};
+
+const METHODS = [
+  { name:'جامعة أم القرى (مكة)',               id:4  },
+  { name:'رابطة العالم الإسلامي',              id:3  },
+  { name:'الهيئة المصرية للمساحة',             id:5  },
+  { name:'الجمعية الإسلامية لأمريكا الشمالية', id:2  },
+  { name:'معهد الجيوفيزياء – طهران',           id:7  },
+  { name:'المجلس الديني الأعلى (فرنسا)',        id:12 },
+  { name:'تونس (الزاوية)',                      id:3  },
+];
+
+// ═══════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════
+function init() {
+  // Load saved offsets
+  PRAYERS.forEach(p => {
+    offsets[p] = parseInt(localStorage.getItem('offset' + p)) || 0;
+  });
+
+  renderMethodList();
+  loadAndDisplayTimes();
+}
+
+// ═══════════════════════════════════════════
+//  Load prayer times from API
+// ═══════════════════════════════════════════
+async function loadAndDisplayTimes() {
+  const lat = localStorage.getItem('userLat');
+  const lon = localStorage.getItem('userLon');
+  if (!lat || !lon) {
+    PRAYERS.forEach(p => {
+      document.getElementById('base-' + p).textContent  = 'GPS غير متاح';
+      document.getElementById('final-' + p).textContent = '--:--';
+    });
+    updateAllBadges();
+    return;
+  }
+
+  const methodId = localStorage.getItem('calcMethodId') || 3;
+  try {
+    const r = await fetch(
+      `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=${methodId}`
+    );
+    const j = await r.json();
+    if (j && j.data) {
+      const t = j.data.timings;
+      PRAYERS.forEach(p => {
+        const raw = t[p]; // "HH:MM"
+        baseTimes[p] = raw;
+        document.getElementById('base-' + p).textContent = raw + ' (أصلي)';
+        updateFinalTime(p);
+      });
+    }
+  } catch(e) {
+    console.error(e);
+    PRAYERS.forEach(p => {
+      document.getElementById('base-' + p).textContent = 'خطأ في التحميل';
+    });
+  }
+  updateAllBadges();
+}
+
+// ═══════════════════════════════════════════
+//  Adjust offset
+// ═══════════════════════════════════════════
+function adjust(prayer, delta) {
+  offsets[prayer] = Math.max(-60, Math.min(60, (offsets[prayer] || 0) + delta));
+  updateBadge(prayer);
+  updateFinalTime(prayer);
+  updateRowStyle(prayer);
+}
+
+function updateBadge(p) {
+  const badge = document.getElementById('badge-' + p);
+  const v = offsets[p];
+  badge.textContent = (v > 0 ? '+' : '') + v + ' د';
+  badge.className = 'offset-badge ' + (v > 0 ? 'positive' : v < 0 ? 'negative' : 'zero');
+}
+
+function updateAllBadges() {
+  PRAYERS.forEach(p => { updateBadge(p); updateRowStyle(p); });
+}
+
+function updateFinalTime(p) {
+  const el = document.getElementById('final-' + p);
+  if (!baseTimes[p]) { el.textContent = '--:--'; return; }
+  const [h, m] = baseTimes[p].split(':').map(Number);
+  const totalMins = h * 60 + m + (offsets[p] || 0);
+  const fh = ((Math.floor(totalMins / 60) % 24) + 24) % 24;
+  const fm = ((totalMins % 60) + 60) % 60;
+  el.textContent = `${fh < 10 ? '0' + fh : fh}:${fm < 10 ? '0' + fm : fm}`;
+}
+
+function updateRowStyle(p) {
+  const row = document.getElementById('row-' + p);
+  if (offsets[p] !== 0) row.classList.add('modified');
+  else                   row.classList.remove('modified');
+}
+
+// ═══════════════════════════════════════════
+//  Save
+// ═══════════════════════════════════════════
+function saveAll() {
+  PRAYERS.forEach(p => {
+    localStorage.setItem('offset' + p, offsets[p]);
+  });
+  localStorage.setItem('needsUpdate', 'true');
+  showToast('✅ تم حفظ التعديلات');
+  setTimeout(() => window.location.href = 'settings.html', 1200);
+}
+
+// ═══════════════════════════════════════════
+//  Reset
+// ═══════════════════════════════════════════
+function confirmReset() {
+  const dlg = document.getElementById('confirmDialog');
+  dlg.classList.remove('hidden');
+  dlg.classList.add('flex');
+}
+function closeConfirm() {
+  const dlg = document.getElementById('confirmDialog');
+  dlg.classList.add('hidden');
+  dlg.classList.remove('flex');
+}
+function doReset() {
+  PRAYERS.forEach(p => {
+    offsets[p] = 0;
+    localStorage.removeItem('offset' + p);
+    updateBadge(p);
+    updateFinalTime(p);
+    updateRowStyle(p);
+  });
+  localStorage.setItem('needsUpdate', 'true');
+  closeConfirm();
+  showToast('🔄 تمت إعادة الضبط');
+}
+
+// ═══════════════════════════════════════════
+//  Calculation Method
+// ═══════════════════════════════════════════
+function renderMethodList() {
+  const current = localStorage.getItem('calcMethodId') || '3';
+  const list = document.getElementById('methodList');
+  list.innerHTML = '';
+  METHODS.forEach(m => {
+    const isSelected = String(m.id) === String(current) &&
+      (localStorage.getItem('calcMethod') === m.name || !localStorage.getItem('calcMethod'));
+    const btn = document.createElement('button');
+    btn.className = `w-full text-right px-4 py-3 rounded-xl flex justify-between items-center transition-all active:scale-[.97] ${
+      isSelected
+        ? 'bg-secondary/15 border border-secondary/30 text-secondary font-bold'
+        : 'bg-primary/50 border border-primary-border text-white/80'
+    }`;
+    btn.innerHTML = `
+      <span class="text-sm">${m.name}</span>
+      ${isSelected ? '<span class="material-symbols-outlined text-secondary text-lg" style="font-variation-settings:\'FILL\' 1">check_circle</span>' : ''}
+    `;
+    btn.onclick = () => {
+      localStorage.setItem('calcMethod', m.name);
+      localStorage.setItem('calcMethodId', m.id);
+      localStorage.setItem('needsUpdate', 'true');
+      renderMethodList();
+      loadAndDisplayTimes();
+      showToast('📐 تم تغيير طريقة الحساب');
+    };
+    list.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Start ──
+init();
+</script>
+</body>
+</html>

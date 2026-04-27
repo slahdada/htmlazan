@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<script>
+  if(!localStorage.getItem('onboarding_done')) {
+    window.location.href = 'onboarding.html';
+  }
+</script>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>صلاة البشير</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#eab308", /* Amber */
+                    "background": "#151515", /* Very dark gray */
+                    "on-surface": "#ffffff",
+                    "surface-variant": "#2a2a2a", /* Location card */
+                    "on-surface-variant": "#a1d0bf", /* Light teal text */
+                    "primary": "#0f2a20", /* Dark green cards */
+                    "primary-border": "#1b4030", /* Dark green borders */
+                    "primary-light": "#059669", /* Nav icons inactive */
+            },
+            "fontFamily": {
+                    "numeral-display": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "headline-md": ["Noto Serif"]
+            }
+          },
+        },
+      }
+</script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        min-height: max(884px, 100dvh);
+        background-color: #151515;
+      }
+      /* Custom card styles to match screenshot */
+      .prayer-card {
+        background-color: #0f2a20;
+        border: 1px solid #1b4030;
+      }
+      .prayer-card-active {
+        background-color: #0f2a20;
+        border: 2px solid #eab308;
+      }
+
+      /* ── Adhan Overlay ── */
+      #adhanOverlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: radial-gradient(ellipse at center, #0a2218 0%, #050e0a 100%);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none;
+        transition: opacity .6s ease;
+      }
+      #adhanOverlay.show {
+        opacity: 1; pointer-events: all;
+      }
+      #adhanOverlay .glow-ring {
+        width: 240px; height: 240px; border-radius: 50%;
+        border: 2px solid rgba(234,179,8,.25);
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+        box-shadow: 0 0 60px rgba(234,179,8,.15), inset 0 0 40px rgba(234,179,8,.05);
+        animation: pulseRing 2s ease-in-out infinite;
+      }
+      #adhanOverlay .glow-ring::before {
+        content: '';
+        position: absolute; inset: -20px;
+        border-radius: 50%;
+        border: 1px solid rgba(234,179,8,.1);
+        animation: pulseRing 2s ease-in-out infinite .5s;
+      }
+      @keyframes pulseRing {
+        0%,100%{ transform:scale(1); opacity:1; }
+        50%     { transform:scale(1.06); opacity:.7; }
+      }
+      @keyframes fadeInUp {
+        from{ opacity:0; transform:translateY(20px); }
+        to  { opacity:1; transform:translateY(0);     }
+      }
+      #adhanOverlay .adhan-content > * {
+        animation: fadeInUp .5s ease forwards;
+      }
+
+      /* ── Pre-Adhan Banner ── */
+      #preAdhanBanner {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 8000;
+        background: linear-gradient(135deg, #0f2a20, #1a4030);
+        border-bottom: 2px solid #eab308;
+        padding: 14px 20px;
+        display: flex; align-items: center; gap: 12px;
+        transform: translateY(-100%);
+        transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+        pointer-events: none;
+      }
+      #preAdhanBanner.show {
+        transform: translateY(0);
+        pointer-events: all;
+      }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden flex flex-col">
+
+<!-- Pre-Adhan Banner -->
+<div id="preAdhanBanner">
+  <span class="material-symbols-outlined text-secondary">notifications_active</span>
+  <div class="text-white">
+    <p class="font-bold text-sm">حان وقت الأذان</p>
+    <p class="text-xs opacity-70">استعد للصلاة القادمة</p>
+  </div>
+</div>
+
+<!-- TopAppBar -->
+<header class="w-full z-50 bg-background flex justify-between items-center px-6 py-4">
+  <button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-white/5 transition-colors">
+    <span class="material-symbols-outlined text-2xl" data-icon="account_circle" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+  </button>
+  
+  <h1 class="font-headline-md text-xl tracking-wide text-secondary font-bold">صلاة البشير</h1>
+  
+  <button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-white/5 transition-colors">
+    <span class="material-symbols-outlined text-3xl" data-icon="menu">menu</span>
+  </button>
+</header>
+
+<main class="flex-1 pb-32 px-6 max-w-md mx-auto w-full space-y-6">
+  
+  <!-- Next Prayer Hero Card -->
+  <section class="bg-primary rounded-[2.5rem] pt-7 pb-6 px-6 text-center border border-secondary shadow-[0_4px_30px_rgba(0,0,0,0.5)] relative overflow-hidden">
+    <!-- Decorative background glow -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-secondary/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+    <p class="text-secondary text-xs font-bold tracking-widest uppercase mb-1 relative z-10 opacity-80">الصلاة القادمة</p>
+    <h2 id="nextPrayerName" class="text-white font-headline-md text-4xl font-bold mb-5 relative z-10 leading-tight">جارٍ التحميل...</h2>
+
+    <!-- Large Accessible Countdown -->
+    <div class="relative z-10 mb-4">
+      <!-- Main digit display -->
+      <div id="nextPrayerCountdown"
+           class="font-numeral-display font-light text-secondary leading-none tracking-tight select-none"
+           style="font-size: clamp(2.8rem, 14vw, 4rem);
+                  text-shadow: 0 0 30px rgba(234,179,8,0.4), 0 2px 6px rgba(0,0,0,0.5);
+                  letter-spacing: 0.06em;"
+           aria-live="polite"
+           aria-label="العد التنازلي">
+        --:--:--
+      </div>
+    </div>
+
+    <p class="text-on-surface-variant text-sm relative z-10 opacity-80">متبقي على رفع الأذان</p>
+  </section>
+
+  <!-- Nearby Mosques Button -->
+  <a href="mosques.html" class="block w-full bg-secondary rounded-2xl p-5 flex justify-between items-center text-black hover:scale-[1.02] transition-transform active:scale-95 shadow-lg">
+    <span class="material-symbols-outlined font-bold">arrow_back_ios_new</span>
+    <div class="flex items-center gap-3">
+      <span class="font-bold text-lg">المساجد القريبة</span>
+      <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">mosque</span>
+    </div>
+  </a>
+
+  <!-- Today's Prayer Times -->
+  <section class="space-y-4 pt-2">
+    <h3 class="font-bold text-secondary text-sm px-2 text-right w-full">مواقيت الصلاة اليوم</h3>
+    
+    <div id="prayerTimesGrid" class="space-y-3">
+      <!-- Prayer times loaded dynamically by JS -->
+      <div class="prayer-card rounded-2xl p-5 flex justify-between items-center animate-pulse">
+        <p class="font-numeral-display text-3xl font-light text-white/30">--:--</p>
+        <div class="flex items-center gap-4">
+          <p class="font-bold text-lg text-white/30">جارٍ التحميل</p>
+          <span class="material-symbols-outlined text-secondary/30 text-3xl">wb_twilight</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Location Card -->
+  <section class="bg-surface-variant rounded-2xl p-5 flex justify-between items-center border border-white/5">
+    <button id="btnUpdateLocation" class="text-secondary font-bold text-sm hover:text-white transition-colors">تحديث</button>
+    <div class="flex items-center gap-3 text-right">
+      <div>
+        <p id="locationText" class="text-white text-sm">جارٍ تحديد الموقع...</p>
+        <p id="locationSubtext" class="text-on-surface-variant text-[11px]">تحديث تلقائي عبر GPS</p>
+      </div>
+      <span class="material-symbols-outlined text-on-surface-variant text-3xl" style="font-variation-settings: 'FILL' 1;">location_on</span>
+    </div>
+  </section>
+
+</main>
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#0c231b] rounded-t-3xl flex justify-around items-center px-2 pt-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-primary-border">
+  <a class="flex flex-col items-center justify-center text-secondary fill-secondary transition-all active:scale-90 duration-150 gap-1" href="index.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+    <span class="font-bold text-[11px]">الرئيسية</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="qibla.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="explore" style="font-variation-settings: 'FILL' 1;">explore</span>
+    <span class="font-bold text-[11px]">القبلة</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="calendar.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="calendar_today">calendar_today</span>
+    <span class="font-bold text-[11px]">التقويم</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="tasabih.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="fingerprint">fingerprint</span>
+    <span class="font-bold text-[11px]">التسبيح</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="settings.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+    <span class="font-bold text-[11px]">الإعدادات</span>
+  </a>
+</nav>
+
+<!-- Audio Element -->
+<audio id="adhanAudio" preload="auto"></audio>
+
+<script>
+  const btnUpdateLocation = document.getElementById('btnUpdateLocation');
+  const locationText      = document.getElementById('locationText');
+  const locationSubtext   = document.getElementById('locationSubtext');
+  const nextPrayerName    = document.getElementById('nextPrayerName');
+  const nextPrayerCountdown = document.getElementById('nextPrayerCountdown');
+  const prayerTimesGrid   = document.getElementById('prayerTimesGrid');
+
+  let prayerTimes = {};
+  let timerInterval;
+
+  // 1. Initial Load
+  window.addEventListener('load', () => {
+    const savedLat  = localStorage.getItem('userLat');
+    const savedLon  = localStorage.getItem('userLon');
+    const savedCity = localStorage.getItem('userCity');
+
+    // Show saved city immediately while GPS refreshes
+    if (savedCity) {
+      locationText.innerText    = savedCity;
+      locationSubtext.innerText = 'تحديث تلقائي عبر GPS';
+    }
+
+    if (savedLat && savedLon) {
+      // Load from cached coords immediately, then refresh GPS in background
+      loadPrayerTimes(savedLat, savedLon);
+      setTimeout(() => updateLocation(true), 3000);
+    } else {
+      // No saved coords — trigger GPS right away
+      updateLocation(true);
+    }
+  });
+
+  async function loadPrayerTimes(lat, lon) {
+    try {
+      const methodId = localStorage.getItem('calcMethodId') || 3;
+      const response = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=${methodId}`);
+      const data = await response.json();
+      
+      if (data && data.data) {
+        prayerTimes = data.data.timings;
+        const hijri = data.data.date.hijri;
+        localStorage.setItem('lastHijri', `${hijri.day} ${hijri.month.ar} ${hijri.year}`);
+        try { updateUI(prayerTimes); } catch(uiErr) { console.error('updateUI error:', uiErr); }
+        startCountdown();
+        scheduleNativeNotifications(prayerTimes); // schedule all prayer notifications
+      }
+    } catch (e) {
+      console.error('Prayer times fetch error:', e);
+    }
+  }
+
+  function updateUI(times) {
+    const names = { "Fajr": "الفجر", "Dhuhr": "الظهر", "Asr": "العصر", "Maghrib": "المغرب", "Isha": "العشاء" };
+    const icons = { "Fajr": "wb_twilight", "Dhuhr": "light_mode", "Asr": "light_mode", "Maghrib": "wb_twilight", "Isha": "dark_mode" };
+    const offsets = { 
+      "Fajr": parseInt(localStorage.getItem('offsetFajr')) || 0,
+      "Dhuhr": parseInt(localStorage.getItem('offsetDhuhr')) || 0,
+      "Asr": parseInt(localStorage.getItem('offsetAsr')) || 0,
+      "Maghrib": parseInt(localStorage.getItem('offsetMaghrib')) || 0,
+      "Isha": parseInt(localStorage.getItem('offsetIsha')) || 0
+    };
+
+    prayerTimesGrid.innerHTML = '';
+    const now = new Date();
+    let nextP = null;
+    let nextPName = "";
+    const order = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+    
+    order.forEach(id => {
+      let [h, m] = times[id].split(':');
+      let pDate = new Date();
+      pDate.setHours(h, parseInt(m) + offsets[id], 0);
+      
+      // Update the display time string
+      const finalH = pDate.getHours();
+      const finalM = pDate.getMinutes();
+      const timeStr = `${finalH < 10 ? '0'+finalH : finalH}:${finalM < 10 ? '0'+finalM : finalM}`;
+
+      const isActive = !nextP && pDate > now;
+      if(isActive) {
+        nextP = pDate;
+        nextPName = names[id];
+        nextPrayerName.innerText = `صلاة ${nextPName}`;
+      }
+
+      const cardClass = isActive ? "prayer-card-active" : "prayer-card";
+      const textColor = isActive ? "text-secondary" : "text-white";
+
+      prayerTimesGrid.innerHTML += `
+        <div class="${cardClass} rounded-2xl p-5 flex justify-between items-center transition-all">
+          <div class="flex flex-col items-start">
+            <p class="font-numeral-display text-3xl font-light ${isActive ? 'text-secondary' : 'text-white opacity-90'}">${timeStr}</p>
+            ${isActive ? '<p class="text-secondary text-[10px] mt-1 pr-1 font-bold">القادمة</p>' : ''}
+          </div>
+          <div class="flex items-center gap-4">
+            <p class="font-bold text-lg ${textColor}">${names[id]}</p>
+            <span class="material-symbols-outlined text-secondary text-3xl">${icons[id]}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    // Fallback if all prayers passed today (Next is Fajr tomorrow)
+    if(!nextP) {
+      nextPrayerName.innerText = "صلاة الفجر";
+      const [h, m] = times["Fajr"].split(':');
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(h, m, 0);
+      nextP = tomorrow;
+    }
+    
+    window.nextPrayerTime = nextP;
+    syncWidget();
+  }
+
+  function startCountdown() {
+    if (timerInterval) clearInterval(timerInterval);
+    const audio       = document.getElementById('adhanAudio');
+    const progressBar = document.getElementById('countdownProgress');
+
+    // Calculate initialDiff immediately so progress bar starts correctly
+    const initialDiff = window.nextPrayerTime ? (window.nextPrayerTime - new Date()) : 0;
+    window._initialDiff = initialDiff; // exposed for syncWidget progress calculation
+
+    function tick() {
+      if (!window.nextPrayerTime) return;
+
+      const now  = new Date();
+      const diff = window.nextPrayerTime - now;
+
+      if (diff <= 0) {
+        clearInterval(timerInterval);
+        showAdhanScreen();
+        loadPrayerTimes(localStorage.getItem('userLat'), localStorage.getItem('userLon'));
+        return;
+      }
+
+      // ── Pre-Adhan banner ──
+      const preAdhanMins = parseInt(localStorage.getItem('preAdhanMins') || '0');
+      if (preAdhanMins > 0) {
+        const diffMins = diff / 60000;
+        if (diffMins <= preAdhanMins && diffMins > preAdhanMins - 0.1) {
+          showPreAdhanBanner(Math.round(diffMins));
+        }
+      }
+
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+
+      nextPrayerCountdown.innerText =
+        `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+
+      // Update linear progress bar width if it exists
+      if (initialDiff > 0 && progressBar) {
+        const pct = Math.max(0, (diff / initialDiff) * 100);
+        progressBar.style.width = pct + '%';
+      }
+
+      if (s === 0) syncWidget();
+    }
+
+    tick(); // Show immediately without waiting 1 second
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function syncWidget() {
+    const nextName  = nextPrayerName ? nextPrayerName.innerText : '';
+    const countdown = nextPrayerCountdown ? nextPrayerCountdown.innerText.trim() : '';
+
+    // Get current prayer time from active card
+    const activeTimeEl = document.querySelector('[data-active-prayer] .prayer-time') ||
+                         document.querySelector('.prayer-card.active .prayer-time');
+    const nextTime = window.nextPrayerTime
+      ? (() => {
+          const d = new Date(window.nextPrayerTime);
+          const h = d.getHours();
+          const m = d.getMinutes();
+          return `${h < 10 ? '0'+h : h}:${m < 10 ? '0'+m : m}`;
+        })()
+      : '--:--';
+
+    // Calculate progress (100% = full time remaining, 0% = prayer time reached)
+    let progress = 60;
+    if (window.nextPrayerTime && window._initialDiff && window._initialDiff > 0) {
+      const diff = window.nextPrayerTime - new Date();
+      progress = Math.round(Math.max(0, Math.min(100, (diff / window._initialDiff) * 100)));
+    }
+
+    const now      = new Date();
+    const dateStr  = now.toLocaleDateString('ar-EG', { weekday:'long', day:'numeric', month:'long' });
+    const hijriStr = localStorage.getItem('lastHijri') || '1447 هـ';
+
+    // ── Write to localStorage (read by CapacitorStorage / native bridge) ──
+    localStorage.setItem('nextPrayerName',      nextName);
+    localStorage.setItem('nextPrayerTime',      nextTime);
+    localStorage.setItem('nextPrayerCountdown', countdown);
+    localStorage.setItem('nextPrayerProgress',  String(progress));
+    localStorage.setItem('currentDate',         dateStr);
+    localStorage.setItem('currentHijri',        hijriStr);
+    localStorage.setItem('nativeAdhanEnabled',  localStorage.getItem('adhanEnabled') || 'true');
+    localStorage.setItem('nativeAdhanVoice',    localStorage.getItem('voice') || 'أذان (1)');
+
+    // ── Also call WidgetUpdate plugin if available ──
+    try {
+      if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.WidgetUpdate) {
+        Capacitor.Plugins.WidgetUpdate.updateData({
+          name: nextName, time: nextTime, countdown: countdown,
+          date: dateStr,  hijri: hijriStr, progress: progress
+        });
+      }
+    } catch (e) { /* plugin not available — localStorage fallback is enough */ }
+  }
+
+  async function updateLocation(isAuto = false) {
+    const setStatus = (main, sub) => {
+      if(!isAuto || main === "فشل التحديث") {
+        locationText.innerText = main;
+        locationSubtext.innerText = sub;
+      }
+    };
+
+    try {
+      const isCapacitor = window.hasOwnProperty('Capacitor');
+      let coordinates;
+      if (isCapacitor && Capacitor.Plugins && Capacitor.Plugins.Geolocation) {
+        coordinates = await Capacitor.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+      } else {
+        coordinates = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+        });
+      }
+
+      const lat = coordinates.coords.latitude;
+      const lon = coordinates.coords.longitude;
+      localStorage.setItem('userLat', lat);
+      localStorage.setItem('userLon', lon);
+
+      loadPrayerTimes(lat, lon);
+
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ar`);
+      const data = await response.json();
+      if(data && data.address) {
+        const city = data.address.city || data.address.town || data.address.village || data.address.state || "موقع مجهول";
+        const full = `${city}، ${data.address.country || ''}`;
+        locationText.innerText = full;
+        locationSubtext.innerText = isAuto ? "تحديث تلقائي عبر GPS" : "تم التحديث بنجاح";
+        localStorage.setItem('userCity', full);
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  btnUpdateLocation.addEventListener('click', () => updateLocation(false));
+
+  // ════════════════════════════════════════════════════════
+  //  ADHAN SCREEN
+  // ════════════════════════════════════════════════════════
+  function showAdhanScreen() {
+    const prayerName = nextPrayerName ? nextPrayerName.innerText : 'الصلاة';
+    const overlay = document.getElementById('adhanOverlay');
+    document.getElementById('adhanPrayerName').textContent = prayerName;
+
+    // Current time
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes();
+    document.getElementById('adhanCurrentTime').textContent =
+      `${h < 10 ? '0'+h : h}:${m < 10 ? '0'+m : m}`;
+
+    overlay.classList.add('show');
+
+    // Play adhan audio
+    if (localStorage.getItem('adhanEnabled') !== 'false') {
+      const selectedVoice = localStorage.getItem('voice') || 'أذان (1)';
+      const voiceFiles = {
+        'أذان (1)': 'mp3 (1).mp3',
+        'أذان (2)': 'mp3 (2).mp3',
+        'أذان (3)': 'mp3 (3).mp3',
+        'أذان (4)': 'mp3 (4).mp3',
+        'أذان (5)': 'mp3 (5).mp3'
+      };
+      const audio = document.getElementById('adhanAudio');
+      audio.src = encodeURI(`audio/${voiceFiles[selectedVoice] || 'mp3 (1).mp3'}`);
+      audio.load();
+      audio.oncanplay = () => { audio.play().catch(e => console.error(e)); audio.oncanplay = null; };
+    }
+  }
+
+  function closeAdhanScreen() {
+    document.getElementById('adhanOverlay').classList.remove('show');
+    const audio = document.getElementById('adhanAudio');
+    audio.pause();
+    audio.currentTime = 0;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  PRE-ADHAN BANNER
+  // ════════════════════════════════════════════════════════
+  let bannerTimer;
+  function showPreAdhanBanner(mins) {
+    const banner = document.getElementById('preAdhanBanner');
+    const prayerName = nextPrayerName ? nextPrayerName.innerText : 'الصلاة';
+    document.getElementById('preAdhanMsg').textContent =
+      `${prayerName} بعد ${mins} دقيقة`;
+    banner.classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => banner.classList.remove('show'), 8000);
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  NATIVE NOTIFICATIONS via Capacitor Local Notifications
+  // ════════════════════════════════════════════════════════
+  async function scheduleNativeNotifications(times) {
+    if (!window.Capacitor) return;
+    const { LocalNotifications } = Capacitor.Plugins;
+    if (!LocalNotifications) return;
+
+    // Request permission
+    const perm = await LocalNotifications.requestPermissions();
+    if (perm.display !== 'granted') return;
+
+    const preAdhanMins = parseInt(localStorage.getItem('preAdhanMins') || '0');
+    const PRAYERS = [
+      { key: 'Fajr',    name: 'صلاة الفجر',   icon: 'wb_twilight' },
+      { key: 'Dhuhr',   name: 'صلاة الظهر',   icon: 'light_mode'  },
+      { key: 'Asr',     name: 'صلاة العصر',   icon: 'wb_sunny'    },
+      { key: 'Maghrib', name: 'صلاة المغرب',  icon: 'wb_twilight' },
+      { key: 'Isha',    name: 'صلاة العشاء',  icon: 'dark_mode'   },
+    ];
+
+    // Cancel previous notifications
+    await LocalNotifications.cancel({ notifications: Array.from({length: 20}, (_,i) => ({ id: i+100 })) });
+
+    const notifications = [];
+    const now = new Date();
+    let idCounter = 100;
+
+    PRAYERS.forEach(p => {
+      const rawTime = times[p.key];
+      if (!rawTime) return;
+
+      const [h, m] = rawTime.split(':').map(Number);
+      const offsetMins = parseInt(localStorage.getItem('offset' + p.key)) || 0;
+      const totalMins = h * 60 + m + offsetMins;
+      const fh = Math.floor(((totalMins / 60) % 24 + 24) % 24);
+      const fm = ((totalMins % 60) + 60) % 60;
+
+      const prayerDate = new Date();
+      prayerDate.setHours(fh, fm, 0, 0);
+      if (prayerDate <= now) prayerDate.setDate(prayerDate.getDate() + 1);
+
+      // ── At adhan time ──
+      if (localStorage.getItem('adhanEnabled') !== 'false') {
+        notifications.push({
+          id: idCounter++,
+          title: '🕌 ' + p.name,
+          body: `حان وقت ${p.name} — ${fh < 10 ? '0'+fh : fh}:${fm < 10 ? '0'+fm : fm}`,
+          schedule: { at: prayerDate },
+          sound: null,
+          smallIcon: 'ic_notification',
+          channelId: 'adhan',
+        });
+      }
+
+      // ── Pre-adhan reminder ──
+      if (preAdhanMins > 0) {
+        const preDate = new Date(prayerDate.getTime() - preAdhanMins * 60000);
+        if (preDate > now) {
+          notifications.push({
+            id: idCounter++,
+            title: '⏰ تنبيه الأذان',
+            body: `${p.name} بعد ${preAdhanMins} دقيقة`,
+            schedule: { at: preDate },
+            smallIcon: 'ic_notification',
+            channelId: 'adhan',
+          });
+        }
+      }
+    });
+
+    if (notifications.length > 0) {
+      await LocalNotifications.schedule({ notifications });
+      console.log(`✅ ${notifications.length} notifications scheduled`);
+    }
+  }
+</script>
+
+<!-- ══════════════════════════════════════════════ -->
+<!--  ADHAN FULL-SCREEN OVERLAY                    -->
+<!-- ══════════════════════════════════════════════ -->
+<div id="adhanOverlay" role="dialog" aria-modal="true" aria-label="وقت الأذان">
+
+  <!-- Stars background decoration -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-[10%] left-[15%] w-1 h-1 bg-white/20 rounded-full"></div>
+    <div class="absolute top-[20%] right-[20%] w-1.5 h-1.5 bg-secondary/30 rounded-full"></div>
+    <div class="absolute top-[35%] left-[8%] w-0.5 h-0.5 bg-white/15 rounded-full"></div>
+    <div class="absolute top-[60%] right-[10%] w-1 h-1 bg-white/10 rounded-full"></div>
+    <div class="absolute bottom-[25%] left-[25%] w-1 h-1 bg-secondary/20 rounded-full"></div>
+  </div>
+
+  <div class="adhan-content flex flex-col items-center gap-6 px-8 text-center relative z-10">
+
+    <!-- Pulsing glow ring with mosque icon -->
+    <div class="glow-ring">
+      <div class="flex flex-col items-center gap-2">
+        <span class="material-symbols-outlined text-secondary text-6xl"
+              style="font-variation-settings:'FILL' 1">mosque</span>
+        <span class="text-secondary/60 text-xs font-bold tracking-widest">الأذان</span>
+      </div>
+    </div>
+
+    <!-- Prayer name -->
+    <div>
+      <p class="text-white/60 text-sm font-bold tracking-widest uppercase mb-1">حان وقت</p>
+      <h2 id="adhanPrayerName"
+          class="text-white font-headline-md text-4xl font-bold"
+          style="text-shadow: 0 0 30px rgba(234,179,8,.5)">صلاة الفجر</h2>
+    </div>
+
+    <!-- Current time -->
+    <div class="bg-white/5 border border-secondary/20 rounded-2xl px-8 py-4">
+      <p id="adhanCurrentTime"
+         class="font-numeral-display text-secondary font-bold"
+         style="font-size: 3rem; letter-spacing: .08em; text-shadow: 0 0 20px rgba(234,179,8,.4)">
+        --:--
+      </p>
+    </div>
+
+    <!-- Arabic phrase -->
+    <p class="text-white/50 text-base font-headline-md italic">
+      اللهم صلِّ على محمد وعلى آل محمد
+    </p>
+
+    <!-- Action buttons -->
+    <div class="flex gap-4 mt-2">
+      <button onclick="closeAdhanScreen()"
+        class="bg-white/10 border border-white/20 rounded-2xl px-8 py-4 text-white font-bold text-sm
+               hover:bg-white/20 active:scale-95 transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-lg">close</span>
+        إيقاف الأذان
+      </button>
+      <button onclick="closeAdhanScreen()"
+        class="bg-secondary rounded-2xl px-8 py-4 text-black font-bold text-sm
+               active:scale-95 transition-all flex items-center gap-2
+               shadow-[0_0_30px_rgba(234,179,8,.4)]">
+        <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>
+        حسناً
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Pre-Adhan Banner (already in HTML above, ID here for completeness) -->
+<div id="preAdhanBanner" style="position:fixed;top:0;left:0;right:0;z-index:8000;
+  background:linear-gradient(135deg,#0f2a20,#1a4030);
+  border-bottom:2px solid #eab308;padding:14px 20px;
+  display:flex;align-items:center;gap:12px;
+  transform:translateY(-100%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);">
+  <span class="material-symbols-outlined text-secondary text-2xl"
+        style="font-variation-settings:'FILL' 1">notifications_active</span>
+  <div>
+    <p id="preAdhanMsg" class="text-white font-bold text-sm">تنبيه الأذان</p>
+    <p class="text-white/60 text-xs">استعد للصلاة القادمة</p>
+  </div>
+  <button onclick="document.getElementById('preAdhanBanner').classList.remove('show')"
+    class="mr-auto text-white/60 hover:text-white">
+    <span class="material-symbols-outlined text-lg">close</span>
+  </button>
+</div>
+
+<audio id="adhanAudio" preload="none"></audio>
+
+</body>
+</html>

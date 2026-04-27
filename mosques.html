@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>قائمة المساجد</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#fcd34d", /* Amber */
+                    "background": "#151515",
+                    "surface-variant": "#0f2a20",
+                    "on-surface-variant": "#86efac",
+                    "primary": "#0a1c15",
+                    "primary-border": "#1b4030",
+            },
+            "fontFamily": {
+                    "numeral-display": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "headline-md": ["Noto Serif"]
+            }
+          },
+        },
+      }
+</script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #151515;
+        min-height: 100vh;
+      }
+      #map {
+        height: 200px;
+        z-index: 10;
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body class="bg-background text-white font-body-md overflow-x-hidden flex flex-col">
+
+<!-- TopAppBar -->
+<header class="w-full z-50 bg-surface-variant flex justify-between items-center px-4 py-4 border-b border-primary-border">
+  <div class="w-10 h-10 rounded-lg bg-[#153a2d] flex items-center justify-center">
+    <span class="material-symbols-outlined text-secondary text-2xl">mosque</span>
+  </div>
+  
+  <h1 class="font-headline-md text-xl tracking-wide text-secondary font-bold">قائمة المساجد</h1>
+  
+  <button id="refreshMosques" class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-white/5 rounded-full transition-all active:rotate-180 duration-500">
+    <span class="material-symbols-outlined text-3xl">refresh</span>
+  </button>
+</header>
+
+<main class="flex-1 pb-32 px-4 max-w-md mx-auto w-full flex flex-col mt-6 space-y-5">
+
+  <!-- Interactive Map Section -->
+  <div id="map" class="w-full bg-primary-border rounded-2xl border border-primary-border shadow-lg overflow-hidden">
+    <div class="w-full h-full flex items-center justify-center text-on-surface-variant text-sm bg-primary-border">
+      جاري تحميل الخريطة...
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="w-full bg-surface-variant rounded-2xl p-4 flex items-center gap-3 border border-primary-border">
+    <span class="material-symbols-outlined text-on-surface-variant text-xl">search</span>
+    <input type="text" placeholder="ابحث عن مسجد..." class="bg-transparent border-none outline-none text-white w-full placeholder-on-surface-variant/70 text-sm focus:ring-0">
+  </div>
+
+  <!-- Mosque List Container -->
+  <div class="space-y-4" id="mosqueList">
+    <!-- List will be populated by JS -->
+    <div class="p-8 text-center text-on-surface-variant">
+      <span class="material-symbols-outlined text-4xl mb-2 animate-spin text-secondary">sync</span>
+      <p>جاري البحث عن موقعك والمساجد القريبة...</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-primary rounded-t-[2rem] flex justify-around items-center px-4 pt-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-primary-border">
+  <a class="flex flex-col items-center justify-center text-[#1c5c41] hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="settings.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="settings">settings</span>
+    <span class="font-bold text-[11px]">الإعدادات</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-[#1c5c41] hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="tasabih.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="exposure_plus_1">exposure_plus_1</span>
+    <span class="font-bold text-[11px]">تسبيح</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-secondary fill-secondary transition-all active:scale-90 duration-150 gap-1" href="mosques.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="mosque" style="font-variation-settings: 'FILL' 1;">mosque</span>
+    <span class="font-bold text-[11px]">المساجد</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-[#1c5c41] hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="index.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="home">home</span>
+    <span class="font-bold text-[11px]">الرئيسية</span>
+  </a>
+</nav>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  let map;
+  let currentMarker;
+  let markersLayer = L.layerGroup();
+
+  function initMap(lat, lon) {
+    if (map) {
+      map.setView([lat, lon], 14);
+    } else {
+      map = L.map('map', { zoomControl: false, attributionControl: false }).setView([lat, lon], 14);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+      markersLayer.addTo(map);
+    }
+    
+    markersLayer.clearLayers();
+    L.circle([lat, lon], { color: '#fcd34d', fillColor: '#fcd34d', fillOpacity: 0.2, radius: 300 }).addTo(markersLayer);
+  }
+
+  async function getGPS() {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => resolve(null), 8000);
+      if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Geolocation) {
+        Capacitor.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true }).then(p => {
+          clearTimeout(timeout);
+          resolve({ lat: p.coords.latitude, lon: p.coords.longitude });
+        }).catch(() => resolve(null));
+      } else {
+        navigator.geolocation.getCurrentPosition(p => {
+          clearTimeout(timeout);
+          resolve({ lat: p.coords.latitude, lon: p.coords.longitude });
+        }, () => resolve(null), { timeout: 8000 });
+      }
+    });
+  }
+
+  async function loadMosques(force = false) {
+    const list = document.getElementById('mosqueList');
+    list.innerHTML = `<div class="p-8 text-center"><span class="material-symbols-outlined text-4xl mb-2 animate-spin text-secondary">sync</span><p>جاري التحديث...</p></div>`;
+
+    let lat = parseFloat(localStorage.getItem('userLat'));
+    let lon = parseFloat(localStorage.getItem('userLon'));
+
+    if (force || !lat || !lon) {
+      const gps = await getGPS();
+      if (gps) {
+        lat = gps.lat; lon = gps.lon;
+        localStorage.setItem('userLat', lat);
+        localStorage.setItem('userLon', lon);
+      }
+    }
+
+    if (!lat || !lon) {
+      list.innerHTML = `<div class="p-8 text-center"><p class="text-red-400 mb-2">فشل تحديد الموقع</p><button onclick="loadMosques(true)" class="bg-secondary text-black px-6 py-2 rounded-full font-bold">حاول مجدداً</button></div>`;
+      return;
+    }
+
+    initMap(lat, lon);
+
+    // Show current coordinates for debugging
+    const coordsInfo = `<div class="text-[10px] text-on-surface-variant/50 text-center mb-2">إحداثياتك: ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>`;
+
+    try {
+      // Overpass API is much better for finding "mosques" specifically
+      const query = `[out:json];node["amenity"="place_of_worship"]["religion"="muslim"](around:10000, ${lat}, ${lon});out;`;
+      const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+      const data = await res.json();
+
+      if (!data.elements || data.elements.length === 0) {
+        list.innerHTML = coordsInfo + `<p class="p-8 text-center text-on-surface-variant">لم نجد مساجد مسجلة في نطاق 10 كم حولك حالياً.</p>`;
+        return;
+      }
+
+      list.innerHTML = coordsInfo;
+      data.elements.forEach(m => {
+        const mLat = m.lat, mLon = m.lon;
+        const name = (m.tags && (m.tags.name || m.tags["name:ar"] || m.tags["name:fr"])) || "مسجد";
+        
+        const distInMeters = L.latLng(lat, lon).distanceTo(L.latLng(mLat, mLon));
+        const dist = (distInMeters / 1000).toFixed(1);
+
+        const card = document.createElement('div');
+        card.className = "bg-surface-variant rounded-2xl p-4 flex justify-between items-center border border-primary-border hover:border-secondary/50 cursor-pointer mb-4 transition-all active:scale-[0.98]";
+        card.innerHTML = `
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-[#153a2d] flex items-center justify-center"><span class="material-symbols-outlined text-secondary text-2xl">mosque</span></div>
+            <div class="text-right">
+              <h3 class="font-bold text-secondary text-base mb-1">${name}</h3>
+              <p class="text-on-surface-variant text-xs">${dist} كم عنك</p>
+            </div>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-black nav-btn shadow-lg"><span class="material-symbols-outlined text-xl">navigation</span></div>
+        `;
+        
+        card.onclick = (e) => {
+          map.flyTo([mLat, mLon], 16);
+          if (currentMarker) map.removeLayer(currentMarker);
+          currentMarker = L.marker([mLat, mLon]).addTo(map).bindPopup(name).openPopup();
+          if (e.target.closest('.nav-btn')) window.open(`https://www.google.com/maps/dir/?api=1&destination=${mLat},${mLon}`);
+        };
+        list.appendChild(card);
+        L.marker([mLat, mLon]).addTo(markersLayer).bindTooltip(name);
+      });
+    } catch (e) {
+      list.innerHTML = `<p class="p-8 text-center text-red-400">حدث خطأ في الاتصال بخادم الخرائط. يرجى المحاولة لاحقاً.</p>`;
+    }
+  }
+
+  document.getElementById('refreshMosques').onclick = () => loadMosques(true);
+  window.onload = () => setTimeout(() => loadMosques(false), 1000);
+</script>
+</body>
+</html>

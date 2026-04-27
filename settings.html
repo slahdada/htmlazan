@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>الإعدادات</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "secondary":          "#eab308",
+          "background":         "#111714",
+          "on-surface":         "#e8f0ec",
+          "surface-variant":    "#1a2e24",
+          "on-surface-variant": "#7fb69a",
+          "primary":            "#0f2a20",
+          "primary-border":     "#1e4030",
+          "primary-light":      "#059669",
+        },
+        fontFamily: {
+          "numeral-display": ["Manrope"],
+          "body-md":         ["Manrope"],
+          "headline-md":     ["Noto Serif"],
+        }
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  body { min-height: max(884px, 100dvh); background-color: #111714; }
+
+  /* ── Custom Toggle ── */
+  .toggle-track {
+    width: 52px; height: 28px;
+    background: #1e4030;
+    border: 1.5px solid #2a5a40;
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background .25s, border-color .25s;
+  }
+  .toggle-track.on {
+    background: #eab308;
+    border-color: #eab308;
+  }
+  .toggle-thumb {
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px; right: 3px;
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 1px 4px rgba(0,0,0,.4);
+  }
+  .toggle-track.on .toggle-thumb {
+    transform: translateX(-26px);
+  }
+
+  /* ── Settings Row ── */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 16px;
+    transition: background .15s;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .setting-row:active { background: rgba(255,255,255,.04); }
+
+  /* ── Section Card ── */
+  .section-card {
+    background: #162820;
+    border: 1px solid #1e4030;
+    border-radius: 24px;
+    overflow: hidden;
+  }
+  .section-card .setting-row + .setting-row {
+    border-top: 1px solid rgba(255,255,255,.05);
+  }
+
+  /* ── Icon Badge ── */
+  .icon-badge {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Modal ── */
+  #optionsModal { backdrop-filter: blur(10px); }
+  #modalContent {
+    transition: transform .3s cubic-bezier(.32,.72,0,1);
+  }
+
+  /* ── Section separator inside card ── */
+  .divider { height: 1px; background: rgba(255,255,255,.05); margin: 0 16px; }
+
+  /* Smooth scroll for modal list */
+  #modalOptionsList { max-height: 55vh; overflow-y: auto; }
+  #modalOptionsList::-webkit-scrollbar { width: 4px; }
+  #modalOptionsList::-webkit-scrollbar-thumb { background: #2a5a40; border-radius: 4px; }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+
+<!-- ── Top App Bar ── -->
+<header class="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-primary-border flex items-center gap-3 px-5 py-4">
+  <span class="material-symbols-outlined text-secondary text-2xl" style="font-variation-settings:'FILL' 1">settings</span>
+  <h1 class="font-headline-md text-xl text-secondary font-bold tracking-wide">الإعدادات</h1>
+</header>
+
+<main class="pb-36 pt-6 px-4 max-w-md mx-auto space-y-7">
+
+  <!-- ══════════════════════════════════
+       SECTION 1 — الأذان والتنبيهات
+  ══════════════════════════════════ -->
+  <div>
+    <p class="text-on-surface-variant text-xs font-bold tracking-widest px-2 mb-3 uppercase">الأذان والتنبيهات</p>
+    <div class="section-card">
+
+      <!-- تفعيل الأذان -->
+      <div class="setting-row" id="rowAdhan">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge bg-yellow-500/10">
+            <span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings:'FILL' 1">notifications_active</span>
+          </div>
+          <div>
+            <p class="font-semibold text-[15px]">تفعيل الأذان</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">تشغيل الأذان عند دخول الوقت</p>
+          </div>
+        </div>
+        <div class="toggle-track on" id="adhanToggleTrack">
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- صوت المؤذن -->
+      <button id="btnVoice" class="setting-row w-full text-right">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge bg-emerald-500/10">
+            <span class="material-symbols-outlined text-primary-light text-xl" style="font-variation-settings:'FILL' 1">record_voice_over</span>
+          </div>
+          <div>
+            <p class="font-semibold text-[15px]">صوت المؤذن</p>
+            <p class="text-xs text-on-surface-variant mt-0.5" id="lblVoice">أذان (1)</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- تنبيه قبل الأذان -->
+      <button id="btnPreAdhan" class="setting-row w-full text-right">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge bg-orange-500/10">
+            <span class="material-symbols-outlined text-orange-400 text-xl" style="font-variation-settings:'FILL' 1">alarm</span>
+          </div>
+          <div>
+            <p class="font-semibold text-[15px]">تنبيه قبل الأذان</p>
+            <p class="text-xs text-on-surface-variant mt-0.5" id="lblPreAdhan">معطل</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SECTION 2 — الحساب والموقع
+  ══════════════════════════════════ -->
+  <div>
+    <p class="text-on-surface-variant text-xs font-bold tracking-widest px-2 mb-3 uppercase">الحساب والموقع</p>
+    <div class="section-card">
+
+      <!-- تحديد الموقع -->
+      <button id="btnLocation" class="setting-row w-full text-right">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge bg-blue-500/10">
+            <span class="material-symbols-outlined text-blue-400 text-xl" style="font-variation-settings:'FILL' 1">location_on</span>
+          </div>
+          <div>
+            <p class="font-semibold text-[15px]">تحديد الموقع</p>
+            <p class="text-xs text-on-surface-variant mt-0.5" id="lblLocation">تلقائي (GPS)</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- طريقة الحساب -->
+      <button id="btnCalc" class="setting-row w-full text-right">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge bg-purple-500/10">
+            <span class="material-symbols-outlined text-purple-400 text-xl" style="font-variation-settings:'FILL' 1">calculate</span>
+          </div>
+          <div>
+            <p class="font-semibold text-[15px]">طريقة الحساب</p>
+            <p class="text-xs text-on-surface-variant mt-0.5" id="lblCalc">جامعة أم القرى</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- تعديل المواقيت -->
+      <a href="adjust.html" class="setting-row block w-full">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge bg-teal-500/10">
+            <span class="material-symbols-outlined text-teal-400 text-xl" style="font-variation-settings:'FILL' 1">tune</span>
+          </div>
+          <div>
+            <p class="font-semibold text-[15px]">تعديل المواقيت يدويًا</p>
+            <p class="text-xs text-on-surface-variant mt-0.5" id="lblAdjust">إضافة أو إنقاص دقائق لكل صلاة</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SECTION 3 — عام
+  ══════════════════════════════════ -->
+  <div>
+    <p class="text-on-surface-variant text-xs font-bold tracking-widest px-2 mb-3 uppercase">عام</p>
+    <div class="section-card">
+
+      <!-- عن التطبيق -->
+      <a href="about.html" class="setting-row block w-full">
+        <div class="flex items-center gap-3">
+          <div class="icon-badge bg-secondary/10">
+            <span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings:'FILL' 1">info</span>
+          </div>
+          <div>
+            <p class="font-semibold text-[15px]">عن التطبيق</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">الإصدار 1.0.0 • صلاح العياري</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant text-xl">chevron_left</span>
+      </a>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Bottom Nav ── -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#0c1f18]/95 backdrop-blur-2xl rounded-t-3xl flex justify-around items-center px-2 pt-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-primary-border">
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="index.html">
+    <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1">home</span>
+    <span class="font-bold text-[11px]">الرئيسية</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="qibla.html">
+    <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1">explore</span>
+    <span class="font-bold text-[11px]">القبلة</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="calendar.html">
+    <span class="material-symbols-outlined text-[28px]">calendar_today</span>
+    <span class="font-bold text-[11px]">التقويم</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="tasabih.html">
+    <span class="material-symbols-outlined text-[28px]">fingerprint</span>
+    <span class="font-bold text-[11px]">التسبيح</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-secondary transition-all active:scale-90 duration-150 gap-1" href="settings.html">
+    <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1">settings</span>
+    <span class="font-bold text-[11px]">الإعدادات</span>
+  </a>
+</nav>
+
+<!-- ── Modal ── -->
+<div id="optionsModal" class="fixed inset-0 z-[100] bg-black/70 hidden flex-col items-end justify-end transition-opacity">
+  <div id="modalContent" class="w-full max-w-md mx-auto bg-[#162820] border border-primary-border rounded-t-3xl p-6 transform translate-y-full">
+    <div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5"></div>
+    <div class="flex justify-between items-center mb-5">
+      <button id="closeModal" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-on-surface-variant active:scale-90 transition-all">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+      <h3 class="font-headline-md text-lg font-bold text-secondary" id="modalTitle">اختر</h3>
+    </div>
+    <div class="space-y-1" id="modalOptionsList"></div>
+  </div>
+</div>
+
+<audio id="adhanAudio" preload="none"></audio>
+
+<script>
+  // ── Elements ──
+  const adhanTrack   = document.getElementById('adhanToggleTrack');
+  const lblVoice     = document.getElementById('lblVoice');
+  const lblPreAdhan  = document.getElementById('lblPreAdhan');
+  const lblLocation  = document.getElementById('lblLocation');
+  const lblCalc      = document.getElementById('lblCalc');
+  const modal        = document.getElementById('optionsModal');
+  const modalContent = document.getElementById('modalContent');
+  const modalTitle   = document.getElementById('modalTitle');
+  const modalList    = document.getElementById('modalOptionsList');
+  const closeBtn     = document.getElementById('closeModal');
+
+  // ── Load prefs ──
+  const prefs = {
+    adhanEnabled: localStorage.getItem('adhanEnabled') !== 'false',
+    voice:        localStorage.getItem('voice')      || 'أذان (1)',
+    preAdhan:     localStorage.getItem('preAdhan')   || 'معطل',
+    location:     localStorage.getItem('location')   || 'تلقائي (GPS)',
+    calcMethod:   localStorage.getItem('calcMethod') || 'جامعة أم القرى (مكة)',
+  };
+
+  // ── Init UI ──
+  if (!prefs.adhanEnabled) adhanTrack.classList.remove('on');
+  lblVoice.innerText    = prefs.voice;
+  lblPreAdhan.innerText = prefs.preAdhan;
+  lblLocation.innerText = prefs.location;
+  lblCalc.innerText     = prefs.calcMethod;
+
+  // ── Toggle ──
+  adhanTrack.addEventListener('click', () => {
+    prefs.adhanEnabled = !prefs.adhanEnabled;
+    adhanTrack.classList.toggle('on', prefs.adhanEnabled);
+    localStorage.setItem('adhanEnabled', prefs.adhanEnabled);
+  });
+
+  // ── Modal ──
+  function openModal(title, options, current, cb) {
+    modalTitle.innerText = title;
+    modalList.innerHTML  = '';
+    options.forEach(opt => {
+      const isSelected = opt === current;
+      const btn = document.createElement('button');
+      btn.className = `w-full text-right px-4 py-3.5 rounded-2xl flex justify-between items-center transition-all active:scale-[.98] ${
+        isSelected
+          ? 'bg-secondary/15 text-secondary font-bold border border-secondary/30'
+          : 'hover:bg-white/5 text-on-surface border border-transparent'
+      }`;
+      btn.innerHTML = `
+        <span class="text-[15px]">${opt}</span>
+        ${isSelected ? '<span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings:\'FILL\' 1">check_circle</span>' : '<span class="w-5"></span>'}
+      `;
+      btn.onclick = () => { cb(opt); hideModal(); };
+      modalList.appendChild(btn);
+    });
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => modalContent.classList.remove('translate-y-full'));
+    });
+  }
+
+  function hideModal() {
+    modalContent.classList.add('translate-y-full');
+    setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 320);
+  }
+
+  closeBtn.onclick = hideModal;
+  modal.onclick = e => { if (e.target === modal) hideModal(); };
+
+  // ── Audio preview ──
+  const previewAudio = new Audio();
+  const voiceFiles = {
+    'أذان (1)': 'mp3 (1).mp3', 'أذان (2)': 'mp3 (2).mp3',
+    'أذان (3)': 'mp3 (3).mp3', 'أذان (4)': 'mp3 (4).mp3',
+    'أذان (5)': 'mp3 (5).mp3'
+  };
+
+  // ── Buttons ──
+  document.getElementById('btnVoice').onclick = () => {
+    openModal('صوت المؤذن', Object.keys(voiceFiles), prefs.voice, val => {
+      prefs.voice = val;
+      lblVoice.innerText = val;
+      localStorage.setItem('voice', val);
+      previewAudio.src = encodeURI(`audio/${voiceFiles[val]}`);
+      previewAudio.play().catch(() => {});
+    });
+  };
+
+  document.getElementById('btnPreAdhan').onclick = () => {
+    openModal('تنبيه قبل الأذان',
+      ['معطل', '5 دقائق', '10 دقائق', '15 دقائق', '20 دقيقة', '30 دقيقة'],
+      prefs.preAdhan,
+      val => {
+        prefs.preAdhan = val;
+        lblPreAdhan.innerText = val;
+        localStorage.setItem('preAdhan', val);
+        localStorage.setItem('preAdhanMins', val === 'معطل' ? 0 : parseInt(val));
+      });
+  };
+
+  document.getElementById('btnLocation').onclick = () => {
+    openModal('تحديد الموقع',
+      ['تلقائي (GPS)', 'يدوي (اختيار من الخريطة)'],
+      prefs.location,
+      val => {
+        prefs.location = val;
+        lblLocation.innerText = val;
+        localStorage.setItem('location', val);
+      });
+  };
+
+  document.getElementById('btnCalc').onclick = () => {
+    const calcMethods = [
+      { name: 'جامعة أم القرى (مكة)',                    id: 4  },
+      { name: 'رابطة العالم الإسلامي',                   id: 3  },
+      { name: 'الهيئة المصرية العامة للمساحة',            id: 5  },
+      { name: 'الجمعية الإسلامية لأمريكا الشمالية',      id: 2  },
+      { name: 'معهد الجيوفيزياء (جامعة طهران)',           id: 7  },
+      { name: 'المجلس الديني الأعلى (فرنسا)',             id: 12 },
+      { name: 'تونس (الزاوية)',                           id: 3  },
+    ];
+    openModal('طريقة الحساب', calcMethods.map(m => m.name), prefs.calcMethod, val => {
+      const sel = calcMethods.find(m => m.name === val);
+      prefs.calcMethod = val;
+      lblCalc.innerText = val;
+      localStorage.setItem('calcMethod', val);
+      localStorage.setItem('calcMethodId', sel.id);
+      localStorage.setItem('needsUpdate', 'true');
+    });
+  };
+
+  // تعديل المواقيت — now handled by adjust.html
+</script>
+</body>
+</html>

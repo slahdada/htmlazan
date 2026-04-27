@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>صلاة البشير - التسبيح</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "secondary": "#eab308", /* Amber */
+          "background": "#151515", /* Very dark gray */
+          "on-surface": "#ffffff",
+          "surface-variant": "#2a2a2a",
+          "on-surface-variant": "#a1d0bf",
+          "primary": "#0f2a20", /* Dark green cards */
+          "primary-border": "#1b4030", /* Dark green borders */
+          "primary-light": "#059669", /* Nav icons inactive */
+        },
+        "fontFamily": {
+          "numeral-display": ["Manrope"],
+          "body-md": ["Manrope"],
+          "headline-md": ["Noto Serif"]
+        }
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  body {
+    min-height: 100dvh;
+    background-color: #151515;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Circle SVG Animation */
+  .progress-ring__circle {
+    transition: stroke-dashoffset 0.3s;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden flex flex-col">
+
+<!-- TopAppBar -->
+<header class="w-full z-50 bg-[#0c231b] flex justify-between items-center px-6 py-4 shadow-md">
+  <button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-white/5 transition-colors">
+    <span class="material-symbols-outlined text-3xl" data-icon="menu">menu</span>
+  </button>
+  
+  <h1 class="font-headline-md text-xl tracking-wide text-secondary font-bold">تسبيح</h1>
+  
+  <button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-white/5 transition-colors">
+    <span class="material-symbols-outlined text-2xl" data-icon="account_circle">account_circle</span>
+  </button>
+</header>
+
+<main class="flex-1 px-6 pt-8 pb-32 flex flex-col items-center max-w-md mx-auto w-full">
+  
+  <!-- Header Text -->
+  <p class="text-secondary/80 text-sm font-medium mb-2 tracking-wide">الذكر الحالي</p>
+  <h2 id="currentDhikrText" class="text-white text-3xl font-bold mb-10 text-center drop-shadow-md transition-all duration-300">سبحان الله وبحمده</h2>
+
+  <!-- Counter Circle -->
+  <div class="relative w-64 h-64 flex items-center justify-center mb-12">
+    <!-- SVG Circle Background -->
+    <svg class="absolute inset-0 w-full h-full drop-shadow-[0_0_15px_rgba(15,42,32,0.8)]" viewBox="0 0 100 100">
+      <!-- Background track -->
+      <circle cx="50" cy="50" r="48" fill="#0c231b" stroke="#1b4030" stroke-width="1" stroke-dasharray="2 3" />
+      <!-- Progress indicator -->
+      <circle id="progressCircle" class="progress-ring__circle" cx="50" cy="50" r="48" fill="none" stroke="#eab308" stroke-width="1.5" stroke-dasharray="301.59" stroke-dashoffset="301.59" stroke-linecap="round" />
+    </svg>
+    
+    <!-- Action Buttons attached to circle -->
+    <button id="resetBtn" class="absolute left-[-16px] bg-primary border border-primary-border rounded-full p-3 shadow-lg text-white/60 hover:text-white hover:border-secondary/50 active:scale-95 transition-all z-10 flex items-center justify-center">
+      <span class="material-symbols-outlined text-[20px]">refresh</span>
+    </button>
+    
+    <button id="vibrateBtn" class="absolute right-[-16px] bg-primary border border-primary-border rounded-full p-3 shadow-lg text-white/60 hover:text-white hover:border-secondary/50 active:scale-95 transition-all z-10 flex items-center justify-center">
+      <span class="material-symbols-outlined text-[20px]">vibration</span>
+    </button>
+
+    <!-- Counter Display -->
+    <div class="text-center z-10 flex flex-col items-center">
+      <div id="counterValue" class="text-secondary text-[5rem] leading-none font-numeral-display font-light drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]">0</div>
+      <div class="text-primary-light text-sm mt-1 font-bold tracking-widest">تكرار</div>
+    </div>
+  </div>
+
+  <!-- Big Tasbih Button -->
+  <button id="tasbihBtn" class="w-44 h-44 rounded-full bg-secondary text-[#1a1a1a] flex flex-col items-center justify-center shadow-[0_0_40px_rgba(234,179,8,0.25)] active:scale-[0.97] active:shadow-[0_0_20px_rgba(234,179,8,0.4)] transition-all duration-150 group">
+    <span class="material-symbols-outlined text-5xl mb-2 group-active:scale-110 transition-transform" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+    <span class="font-bold text-sm">انقر للتسبيح</span>
+  </button>
+
+  <!-- Adhkar Selection Section -->
+  <div class="w-full mt-12 mb-8">
+    <div class="flex items-center gap-4 mb-6">
+      <div class="h-[1px] bg-white/10 flex-1"></div>
+      <span class="text-white font-bold text-sm tracking-wide">اختر الذكر</span>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-3" id="adhkarGrid">
+      <!-- Grid items generated by JS -->
+    </div>
+  </div>
+</main>
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#0c231b] rounded-t-3xl flex justify-around items-center px-2 pt-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-primary-border">
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="settings.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+    <span class="font-bold text-[11px]">الإعدادات</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-secondary fill-secondary transition-all active:scale-90 duration-150 gap-1" href="tasabih.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="fingerprint" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+    <span class="font-bold text-[11px]">التسبيح</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="calendar.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="calendar_today">calendar_today</span>
+    <span class="font-bold text-[11px]">التقويم</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="qibla.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="explore" style="font-variation-settings: 'FILL' 1;">explore</span>
+    <span class="font-bold text-[11px]">القبلة</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="index.html">
+    <span class="material-symbols-outlined text-[28px]" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+    <span class="font-bold text-[11px]">الرئيسية</span>
+  </a>
+</nav>
+
+<script>
+  // Extended list of Adhkar
+  const adhkarList = [
+    "سبحان الله",
+    "الحمد لله",
+    "الله أكبر",
+    "أستغفر الله",
+    "لا إله إلا الله",
+    "سبحان الله وبحمده",
+    "سبحان الله العظيم",
+    "اللهم صلِّ على محمد"
+  ];
+
+  // State Management
+  let currentDhikrIndex = localStorage.getItem('tasbih_dhikr_index') ? parseInt(localStorage.getItem('tasbih_dhikr_index')) : 0;
+  let counts = JSON.parse(localStorage.getItem('tasbih_counts')) || {};
+  let hapticEnabled = localStorage.getItem('tasbih_haptic') !== 'false'; // default true
+
+  // DOM Elements
+  const counterEl = document.getElementById('counterValue');
+  const dhikrTextEl = document.getElementById('currentDhikrText');
+  const progressCircle = document.getElementById('progressCircle');
+  const adhkarGrid = document.getElementById('adhkarGrid');
+  const vibrateBtn = document.getElementById('vibrateBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const tasbihBtn = document.getElementById('tasbihBtn');
+
+  const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * 48; // r=48
+  const TARGET_COUNT = 33; // Circle completes a lap every 33 clicks
+
+  function init() {
+    renderGrid();
+    updateUI();
+    updateVibrateIcon();
+  }
+
+  function renderGrid() {
+    adhkarGrid.innerHTML = adhkarList.map((dhikr, index) => {
+      const isActive = index === currentDhikrIndex;
+      const borderClass = isActive ? 'border-secondary bg-primary shadow-md' : 'border-primary-border bg-[#0c231b] opacity-80';
+      const textClass = isActive ? 'text-secondary' : 'text-white/90';
+      return `
+        <button onclick="selectDhikr(${index})" class="rounded-2xl border ${borderClass} p-4 text-center transition-all duration-200 active:scale-95 flex items-center justify-center min-h-[70px]">
+          <span class="text-sm font-bold ${textClass}">${dhikr}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  window.selectDhikr = function(index) {
+    // Add small exit/enter animation for text
+    dhikrTextEl.style.opacity = 0;
+    dhikrTextEl.style.transform = "translateY(-10px)";
+    
+    setTimeout(() => {
+      currentDhikrIndex = index;
+      localStorage.setItem('tasbih_dhikr_index', index);
+      renderGrid();
+      updateUI();
+      
+      dhikrTextEl.style.opacity = 1;
+      dhikrTextEl.style.transform = "translateY(0)";
+    }, 150);
+    
+    if (hapticEnabled && navigator.vibrate) navigator.vibrate(10);
+  };
+
+  function getCount() {
+    return counts[currentDhikrIndex] || 0;
+  }
+
+  function updateUI() {
+    const count = getCount();
+    
+    // Update Number
+    counterEl.innerText = count;
+    
+    // Update Text
+    dhikrTextEl.innerText = adhkarList[currentDhikrIndex];
+    
+    // Update Progress Circle (Loops every 33)
+    const currentLapProgress = count === 0 ? 0 : ((count % TARGET_COUNT === 0) ? TARGET_COUNT : count % TARGET_COUNT);
+    const progressPercentage = currentLapProgress / TARGET_COUNT;
+    const offset = CIRCLE_CIRCUMFERENCE - (progressPercentage * CIRCLE_CIRCUMFERENCE);
+    
+    progressCircle.style.strokeDashoffset = offset;
+  }
+
+  // Tasbih Click Handler
+  tasbihBtn.addEventListener('click', () => {
+    let count = getCount();
+    count++;
+    counts[currentDhikrIndex] = count;
+    localStorage.setItem('tasbih_counts', JSON.stringify(counts));
+    
+    // Haptic Feedback Logic
+    if (hapticEnabled && navigator.vibrate) {
+       if (count % TARGET_COUNT === 0) {
+          navigator.vibrate([30, 50, 30]); // Distinctive pattern at target (e.g. 33, 66, 99)
+       } else {
+          navigator.vibrate(15); // Short tap
+       }
+    }
+    
+    // Small scale animation on the text to make it feel responsive
+    counterEl.style.transform = "scale(1.1)";
+    setTimeout(() => {
+       counterEl.style.transform = "scale(1)";
+    }, 100);
+
+    updateUI();
+  });
+
+  // Reset Button
+  resetBtn.addEventListener('click', () => {
+    if (getCount() > 0) {
+      if (confirm('هل أنت متأكد من تصفير العداد لهذا الذكر؟')) {
+        counts[currentDhikrIndex] = 0;
+        localStorage.setItem('tasbih_counts', JSON.stringify(counts));
+        updateUI();
+        if (hapticEnabled && navigator.vibrate) navigator.vibrate([20, 20]);
+      }
+    }
+  });
+
+  // Vibrate Toggle
+  vibrateBtn.addEventListener('click', () => {
+    hapticEnabled = !hapticEnabled;
+    localStorage.setItem('tasbih_haptic', hapticEnabled);
+    updateVibrateIcon();
+    if (hapticEnabled && navigator.vibrate) navigator.vibrate(30);
+  });
+
+  function updateVibrateIcon() {
+    if (hapticEnabled) {
+      vibrateBtn.innerHTML = '<span class="material-symbols-outlined text-secondary text-[20px]">vibration</span>';
+      vibrateBtn.classList.replace('text-white/60', 'text-secondary');
+    } else {
+      vibrateBtn.innerHTML = '<span class="material-symbols-outlined text-white/60 text-[20px]">smartphone</span>';
+      vibrateBtn.classList.replace('text-secondary', 'text-white/60');
+    }
+  }
+
+  // Prevent double-tap zoom on mobile
+  document.addEventListener('dblclick', function(event) {
+    event.preventDefault();
+  }, { passive: false });
+
+  // Initialize
+  init();
+</script>
+
+</body>
+</html>

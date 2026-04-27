@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>مرحباً بك</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#eab308", /* Amber */
+                    "background": "#151515", /* Very dark gray */
+                    "on-surface": "#ffffff",
+                    "surface-variant": "#0a1c15", /* Inner dark card */
+                    "on-surface-variant": "#a1d0bf", /* Light teal text */
+                    "primary": "#0f2a20", /* Dark green cards */
+                    "primary-border": "#1b4030", /* Dark green borders */
+            },
+            "fontFamily": {
+                    "numeral-display": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "headline-md": ["Noto Serif"]
+            }
+          },
+        },
+      }
+</script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        min-height: max(884px, 100dvh);
+        background-color: #151515;
+      }
+      .fade-in {
+        animation: fadeIn 1.5s ease-in-out forwards;
+        opacity: 0;
+      }
+      .slide-up {
+        animation: slideUp 1s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      @keyframes fadeIn {
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .calligraphy-bg {
+        background-image: url('data:image/svg+xml;utf8,<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="80" fill="%231b4030" opacity="0.3" font-family="Noto Serif">﷽</text></svg>');
+        background-repeat: no-repeat;
+        background-position: top center;
+        background-size: contain;
+      }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden flex flex-col items-center justify-center p-6">
+
+  <!-- Main Card -->
+  <div class="w-full max-w-md bg-primary rounded-[2.5rem] p-8 flex flex-col items-center relative overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-primary-border/50 slide-up calligraphy-bg">
+    
+    <!-- Sparkle Icon -->
+    <div class="w-20 h-20 rounded-full bg-[#1b4030] flex items-center justify-center mb-8 mt-4 border border-secondary/20 shadow-[0_0_30px_rgba(234,179,8,0.15)] fade-in">
+      <span class="material-symbols-outlined text-secondary text-4xl">auto_awesome</span>
+    </div>
+
+    <!-- Title -->
+    <h1 class="font-headline-md text-[1.7rem] leading-snug text-secondary font-bold text-center mb-8 slide-up" style="animation-delay: 0.2s;">
+      مرحباً بك في تطبيق<br/>"صلاة البشير" 🌙
+    </h1>
+    
+    <!-- Paragraph 1 -->
+    <p class="text-on-surface/90 text-sm leading-relaxed text-center mb-6 slide-up" style="animation-delay: 0.4s;">
+      هذا التطبيق هو صدقة جارية عن روح المرحوم الحاج البشير سويب، نسأل الله أن يتغمده بواسع رحمته ويجعل هذا العمل نوراً له في قبره. كما نسأل الله أن يغفر لوالديّ مطوّر التطبيق، ويرحمهما رحمة واسعة، ويجزيهما خير الجزاء.
+    </p>
+
+    <!-- Inner Prayer Card -->
+    <div class="bg-surface-variant w-full rounded-2xl p-5 mb-6 text-center border border-white/5 slide-up" style="animation-delay: 0.6s;">
+      <p class="text-secondary font-bold text-sm mb-3">
+        💛 نرجو منك دعاءً صادقاً لهم
+      </p>
+      <p class="text-white text-sm leading-relaxed italic font-headline-md">
+        "اللهم اغفر لهم وارحمهم، واجعل هذا العمل في ميزان حسناتهم"
+      </p>
+    </div>
+
+    <!-- Paragraph 2 -->
+    <p class="text-on-surface-variant text-xs leading-relaxed text-center mb-8 slide-up" style="animation-delay: 0.8s;">
+      جزاك الله خيراً على استخدامك للتطبيق، ونسأل الله أن يعينك على المحافظة على صلاتك.
+    </p>
+
+    <!-- Get Started Button -->
+    <button id="startBtn" class="w-full bg-secondary text-black font-bold text-lg py-4 rounded-2xl hover:bg-yellow-400 transition-all active:scale-95 slide-up flex items-center justify-center gap-2 shadow-[0_5px_20px_rgba(234,179,8,0.3)]" style="animation-delay: 1s;">
+      ابدأ الاستخدام
+      <span class="material-symbols-outlined font-bold" style="font-variation-settings: 'FILL' 1;">arrow_back</span>
+    </button>
+  </div>
+
+<script>
+  document.getElementById('startBtn').addEventListener('click', () => {
+    localStorage.setItem('onboarding_done', 'true');
+    window.location.href = 'index.html';
+  });
+</script>
+</body>
+</html>

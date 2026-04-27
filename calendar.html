@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>التقويم الإسلامي</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: {
+        "secondary":          "#eab308",
+        "background":         "#111714",
+        "surface-variant":    "#162820",
+        "on-surface-variant": "#7fb69a",
+        "primary":            "#0f2a20",
+        "primary-border":     "#1e4030",
+        "primary-light":      "#059669",
+      },
+      fontFamily: {
+        "numeral-display": ["Manrope"],
+        "body-md":         ["Manrope"],
+        "headline-md":     ["Noto Serif"],
+      }
+    }}
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  body { min-height:100dvh; background:#111714; }
+
+  /* ── Day cell ── */
+  .day-cell {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width:40px; height:52px; border-radius:14px; cursor:pointer;
+    transition: background .15s, transform .1s;
+    position:relative;
+  }
+  .day-cell:active { transform:scale(.88); }
+  .day-cell.today {
+    background: #eab308;
+    box-shadow: 0 0 18px rgba(234,179,8,.4);
+  }
+  .day-cell.today .greg  { color:#000; }
+  .day-cell.today .hijri { color:rgba(0,0,0,.55); }
+  .day-cell.event::after {
+    content:'';
+    position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%; background:#eab308;
+  }
+  .day-cell.today.event::after { background:#000; }
+  .day-cell.other-month { opacity:.25; }
+
+  /* skeleton pulse */
+  .skeleton { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
+
+  /* event card */
+  .event-card {
+    background:#162820;
+    border:1px solid #1e4030;
+    border-radius:20px;
+    padding:14px 16px;
+    display:flex; align-items:center; gap:14px;
+    transition:transform .15s;
+  }
+  .event-card:active { transform:scale(.97); }
+  .event-soon { border-color:#eab308; }
+</style>
+</head>
+<body class="bg-background text-white font-body-md overflow-x-hidden flex flex-col">
+
+<!-- ── Header ── -->
+<header class="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-primary-border flex items-center gap-3 px-5 py-4">
+  <span class="material-symbols-outlined text-secondary text-2xl" style="font-variation-settings:'FILL' 1">calendar_month</span>
+  <h1 class="font-headline-md text-xl text-secondary font-bold">التقويم الإسلامي</h1>
+</header>
+
+<main class="flex-1 pb-36 pt-5 px-4 max-w-md mx-auto w-full space-y-5">
+
+  <!-- ══ Today Card ══ -->
+  <div class="bg-surface-variant rounded-3xl p-5 border border-primary-border relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent pointer-events-none"></div>
+    <div class="flex justify-between items-center relative z-10">
+      <div>
+        <p class="text-on-surface-variant text-xs mb-1">اليوم الميلادي</p>
+        <p id="todayGreg" class="text-white text-sm font-bold skeleton">-- --- ----</p>
+      </div>
+      <div class="text-center px-4 py-2 bg-secondary/10 rounded-2xl border border-secondary/20">
+        <p id="todayHijriDay" class="text-secondary font-numeral-display text-3xl font-bold leading-none skeleton">--</p>
+        <p id="todayHijriMonth" class="text-secondary/70 text-xs mt-0.5 skeleton">-------</p>
+        <p id="todayHijriYear"  class="text-secondary/50 text-[10px] skeleton">----</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Month Navigator ══ -->
+  <div class="bg-surface-variant rounded-3xl border border-primary-border overflow-hidden">
+
+    <!-- Nav header -->
+    <div class="flex justify-between items-center px-5 py-4 border-b border-primary-border">
+      <button id="nextMonth" class="w-9 h-9 rounded-full bg-primary-border/50 flex items-center justify-center text-secondary hover:bg-primary-border active:scale-90 transition-all">
+        <span class="material-symbols-outlined text-xl">chevron_left</span>
+      </button>
+      <div class="text-center">
+        <h2 id="calMonthName" class="text-secondary font-headline-md font-bold text-lg skeleton">------ ----</h2>
+        <p  id="calMonthGreg" class="text-on-surface-variant text-xs mt-0.5 skeleton">---- --- ----</p>
+      </div>
+      <button id="prevMonth" class="w-9 h-9 rounded-full bg-primary-border/50 flex items-center justify-center text-secondary hover:bg-primary-border active:scale-90 transition-all">
+        <span class="material-symbols-outlined text-xl">chevron_right</span>
+      </button>
+    </div>
+
+    <!-- Weekday labels -->
+    <div class="grid grid-cols-7 gap-0 text-center px-3 pt-4 pb-2">
+      <div class="text-on-surface-variant/50 text-[11px] font-bold">أح</div>
+      <div class="text-on-surface-variant/50 text-[11px] font-bold">إث</div>
+      <div class="text-on-surface-variant/50 text-[11px] font-bold">ثل</div>
+      <div class="text-on-surface-variant/50 text-[11px] font-bold">أر</div>
+      <div class="text-on-surface-variant/50 text-[11px] font-bold">خم</div>
+      <div class="text-secondary/60 text-[11px] font-bold">جم</div>
+      <div class="text-on-surface-variant/50 text-[11px] font-bold">سب</div>
+    </div>
+
+    <!-- Grid -->
+    <div id="calendarGrid" class="grid grid-cols-7 place-items-center px-3 pb-5 gap-y-1">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- ══ Upcoming Events ══ -->
+  <div>
+    <div class="flex justify-between items-center px-1 mb-3">
+      <span class="text-on-surface-variant text-xs">هجري 1447</span>
+      <h3 class="font-bold text-secondary text-base">المناسبات الدينية</h3>
+    </div>
+    <div id="eventList" class="space-y-3">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Bottom Nav ── -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-[#0c1f18]/95 backdrop-blur-2xl rounded-t-3xl flex justify-around items-center px-2 pt-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] border-t border-primary-border">
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="index.html">
+    <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1">home</span>
+    <span class="font-bold text-[11px]">الرئيسية</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="qibla.html">
+    <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1">explore</span>
+    <span class="font-bold text-[11px]">القبلة</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-secondary transition-all active:scale-90 duration-150 gap-1" href="calendar.html">
+    <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1">calendar_today</span>
+    <span class="font-bold text-[11px]">التقويم</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="tasabih.html">
+    <span class="material-symbols-outlined text-[28px]">fingerprint</span>
+    <span class="font-bold text-[11px]">التسبيح</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary-light hover:text-secondary transition-all active:scale-90 duration-150 gap-1" href="settings.html">
+    <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1">settings</span>
+    <span class="font-bold text-[11px]">الإعدادات</span>
+  </a>
+</nav>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  ISLAMIC CALENDAR — Full implementation
+// ═══════════════════════════════════════════════════════
+
+// ── Religious events database (Hijri month/day) ──
+const EVENTS = [
+  { m:1,  d:1,  name:'رأس السنة الهجرية',         icon:'celebration',  color:'text-yellow-400',  bg:'bg-yellow-400/10' },
+  { m:1,  d:10, name:'يوم عاشوراء',                icon:'star',         color:'text-amber-400',   bg:'bg-amber-400/10'  },
+  { m:3,  d:12, name:'المولد النبوي الشريف',        icon:'mosque',       color:'text-green-400',   bg:'bg-green-400/10'  },
+  { m:7,  d:27, name:'ليلة المعراج',               icon:'nights_stay',  color:'text-blue-300',    bg:'bg-blue-400/10'   },
+  { m:8,  d:15, name:'ليلة النصف من شعبان',        icon:'brightness_3', color:'text-indigo-300',  bg:'bg-indigo-400/10' },
+  { m:9,  d:1,  name:'بداية شهر رمضان المبارك',   icon:'crescent_moon',color:'text-emerald-400', bg:'bg-emerald-400/10'},
+  { m:9,  d:27, name:'ليلة القدر المرتقبة',        icon:'auto_awesome', color:'text-yellow-300',  bg:'bg-yellow-400/10' },
+  { m:10, d:1,  name:'عيد الفطر المبارك',          icon:'celebration',  color:'text-secondary',   bg:'bg-secondary/10'  },
+  { m:11, d:15, name:'الأيام البيض – ذو القعدة',   icon:'sunny',        color:'text-slate-300',   bg:'bg-slate-400/10'  },
+  { m:12, d:1,  name:'بداية العشر من ذي الحجة',   icon:'star',         color:'text-amber-300',   bg:'bg-amber-400/10'  },
+  { m:12, d:9,  name:'يوم عرفة',                   icon:'terrain',      color:'text-orange-300',  bg:'bg-orange-400/10' },
+  { m:12, d:10, name:'عيد الأضحى المبارك',         icon:'celebration',  color:'text-secondary',   bg:'bg-secondary/10'  },
+  { m:12, d:13, name:'آخر أيام التشريق',            icon:'sunny',        color:'text-slate-300',   bg:'bg-slate-400/10'  },
+];
+
+// ── Hijri month names ──
+const HIJRI_MONTHS = [
+  'محرم','صفر','ربيع الأول','ربيع الثاني',
+  'جمادى الأولى','جمادى الآخرة','رجب','شعبان',
+  'رمضان','شوال','ذو القعدة','ذو الحجة'
+];
+
+// ── State ──
+let viewHijriYear  = 0;
+let viewHijriMonth = 0;
+let todayHijri     = { d:0, m:0, y:0 };
+let monthData      = []; // [{greg, hijri:{d,m,y}}] for each day of current view
+
+// ── Cache for API results ──
+const cache = {};
+
+// ═══════════════════════════════
+//  API: fetch one Gregorian month → get hijri for each day
+// ═══════════════════════════════
+async function fetchHijriMonth(gregYear, gregMonth) {
+  const key = `${gregYear}-${gregMonth}`;
+  if (cache[key]) return cache[key];
+  try {
+    const r = await fetch(
+      `https://api.aladhan.com/v1/gToHCalendar/${gregMonth}/${gregYear}`
+    );
+    const j = await r.json();
+    if (j.code === 200) { cache[key] = j.data; return j.data; }
+  } catch(e) { console.error(e); }
+  return null;
+}
+
+// ═══════════════════════════════
+//  INIT
+// ═══════════════════════════════
+async function init() {
+  const today = new Date();
+  // Get today's hijri from API
+  try {
+    const r = await fetch(
+      `https://api.aladhan.com/v1/gToH?date=${today.getDate()}-${today.getMonth()+1}-${today.getFullYear()}`
+    );
+    const j = await r.json();
+    if (j.code === 200) {
+      const h = j.data.hijri;
+      todayHijri = { d: parseInt(h.day), m: parseInt(h.month.number), y: parseInt(h.year) };
+      // Display today card
+      document.getElementById('todayHijriDay').textContent   = h.day;
+      document.getElementById('todayHijriMonth').textContent = h.month.ar;
+      document.getElementById('todayHijriYear').textContent  = h.year + ' هـ';
+      document.getElementById('todayGreg').textContent =
+        today.toLocaleDateString('ar-EG', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+      // Remove skeleton
+      ['todayHijriDay','todayHijriMonth','todayHijriYear','todayGreg']
+        .forEach(id => document.getElementById(id).classList.remove('skeleton'));
+      // Set initial view to current Hijri month
+      viewHijriYear  = todayHijri.y;
+      viewHijriMonth = todayHijri.m;
+    }
+  } catch(e) { console.error(e); }
+
+  if (!viewHijriMonth) {
+    // Fallback: approximate
+    viewHijriYear  = 1447;
+    viewHijriMonth = 10; // Shawwal
+  }
+
+  renderEvents();
+  await renderCalendarForHijriMonth(viewHijriYear, viewHijriMonth);
+}
+
+// ═══════════════════════════════
+//  Render calendar for a given Hijri month
+//  Strategy: fetch the 3 Gregorian months that could overlap,
+//  filter days that match the Hijri month, sort by Hijri day.
+// ═══════════════════════════════
+async function renderCalendarForHijriMonth(hYear, hMonth) {
+  // Show loading
+  document.getElementById('calMonthName').textContent = `${HIJRI_MONTHS[hMonth-1]} ${hYear}`;
+  document.getElementById('calMonthName').classList.add('skeleton');
+  document.getElementById('calendarGrid').innerHTML =
+    Array(35).fill('<div class="w-9 h-12 rounded-xl bg-white/5 skeleton"></div>').join('');
+
+  // Fetch 3 consecutive Gregorian months to cover the Hijri month
+  // A Hijri month spans at most 2 Gregorian months
+  // We'll scan ±1 Gregorian month around today's approx mapping
+  const today = new Date();
+  const gYear = today.getFullYear();
+  const gMonth= today.getMonth()+1;
+
+  // Fetch current, prev and next greg months (rough window)
+  // Since we don't know which greg months contain the hijri month,
+  // fetch 3 months centred on current month and also try months ±3
+  const toFetch = [];
+  for (let off = -3; off <= 4; off++) {
+    let gy = gYear, gm = gMonth + off;
+    while (gm < 1)  { gy--; gm += 12; }
+    while (gm > 12) { gy++; gm -= 12; }
+    toFetch.push([gy, gm]);
+  }
+
+  const allDays = [];
+  for (const [gy, gm] of toFetch) {
+    const data = await fetchHijriMonth(gy, gm);
+    if (!data) continue;
+    for (const entry of data) {
+      const hd = parseInt(entry.hijri.day);
+      const hm = parseInt(entry.hijri.month.number);
+      const hy = parseInt(entry.hijri.year);
+      if (hy === hYear && hm === hMonth) {
+        allDays.push({
+          hijriDay: hd,
+          gregDate: new Date(entry.gregorian.date.split('-').reverse().join('-') + 'T00:00:00'),
+          hijriMonthName: entry.hijri.month.ar,
+        });
+      }
+    }
+  }
+
+  // Deduplicate by hijriDay
+  const seen = new Set();
+  const days = allDays.filter(d => { if(seen.has(d.hijriDay)) return false; seen.add(d.hijriDay); return true; });
+  days.sort((a,b) => a.hijriDay - b.hijriDay);
+
+  if (!days.length) {
+    document.getElementById('calendarGrid').innerHTML =
+      '<div class="col-span-7 text-center text-on-surface-variant py-8">تعذّر تحميل البيانات. تحقق من الاتصال.</div>';
+    return;
+  }
+
+  // Update header
+  const firstGreg = days[0].gregDate;
+  const lastGreg  = days[days.length-1].gregDate;
+  const gregRange = firstGreg.toLocaleDateString('ar-EG',{month:'long',year:'numeric'});
+  document.getElementById('calMonthName').textContent = `${HIJRI_MONTHS[hMonth-1]} ${hYear}`;
+  document.getElementById('calMonthGreg').textContent = gregRange;
+  document.getElementById('calMonthName').classList.remove('skeleton');
+  document.getElementById('calMonthGreg').classList.remove('skeleton');
+
+  // Event days set
+  const eventDays = new Set(EVENTS.filter(e=>e.m===hMonth).map(e=>e.d));
+
+  // Build grid — start from Sunday of first week
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  const firstDow = firstGreg.getDay(); // 0=Sun
+  // Empty cells before first day
+  for (let i = 0; i < firstDow; i++) {
+    grid.innerHTML += '<div></div>';
+  }
+
+  days.forEach(({hijriDay, gregDate}) => {
+    const isToday = todayHijri.d === hijriDay &&
+                    todayHijri.m === hMonth   &&
+                    todayHijri.y === hYear;
+    const hasEvent = eventDays.has(hijriDay);
+    const gregNum  = gregDate.getDate();
+
+    const cell = document.createElement('div');
+    cell.className = `day-cell${isToday?' today':''}${hasEvent?' event':''}`;
+    cell.innerHTML = `
+      <span class="greg text-[13px] font-numeral-display font-bold ${isToday?'text-black':'text-white'}">${hijriDay}</span>
+      <span class="hijri text-[9px] font-bold ${isToday?'text-black/50':'text-on-surface-variant'}">${gregNum}</span>
+    `;
+    cell.title = `${hijriDay} ${HIJRI_MONTHS[hMonth-1]} ${hYear}`;
+    grid.appendChild(cell);
+  });
+}
+
+// ═══════════════════════════════
+//  Render Events list
+// ═══════════════════════════════
+function renderEvents() {
+  const list = document.getElementById('eventList');
+  list.innerHTML = '';
+
+  // Sort events: upcoming first relative to today's Hijri date
+  const sorted = [...EVENTS].sort((a, b) => {
+    const aFuture = a.m > todayHijri.m || (a.m === todayHijri.m && a.d >= todayHijri.d);
+    const bFuture = b.m > todayHijri.m || (b.m === todayHijri.m && b.d >= todayHijri.d);
+    if (aFuture && !bFuture) return -1;
+    if (!aFuture && bFuture) return  1;
+    return (a.m*100+a.d) - (b.m*100+b.d);
+  });
+
+  sorted.forEach(ev => {
+    const isPast = ev.m < todayHijri.m || (ev.m === todayHijri.m && ev.d < todayHijri.d);
+    const isSoon = !isPast && (
+      (ev.m === todayHijri.m && ev.d - todayHijri.d <= 7) ||
+      (ev.m === todayHijri.m + 1 && ev.d + (30 - todayHijri.d) <= 7)
+    );
+
+    const card = document.createElement('div');
+    card.className = `event-card${isSoon?' event-soon':''}${isPast?' opacity-40':''}`;
+    card.innerHTML = `
+      <div class="w-11 h-11 rounded-2xl ${ev.bg} flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined ${ev.color} text-2xl" style="font-variation-settings:'FILL' 1">${ev.icon}</span>
+      </div>
+      <div class="flex-1 text-right">
+        <p class="font-bold text-[14px] text-white leading-tight">${ev.name}</p>
+        <p class="text-on-surface-variant text-xs mt-0.5">${ev.d} ${HIJRI_MONTHS[ev.m-1]}</p>
+      </div>
+      ${isSoon ? `<span class="text-secondary text-[10px] font-bold bg-secondary/10 px-2 py-1 rounded-full flex-shrink-0">قريباً</span>` : ''}
+      ${ev.d === todayHijri.d && ev.m === todayHijri.m ? `<span class="text-black text-[10px] font-bold bg-secondary px-2 py-1 rounded-full flex-shrink-0">اليوم</span>` : ''}
+    `;
+    card.onclick = () => {
+      viewHijriMonth = ev.m;
+      viewHijriYear  = todayHijri.y;
+      renderCalendarForHijriMonth(viewHijriYear, viewHijriMonth);
+      document.querySelector('main').scrollTo({top:0, behavior:'smooth'});
+      window.scrollTo({top:0, behavior:'smooth'});
+    };
+    list.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════
+//  Navigation
+// ═══════════════════════════════
+document.getElementById('prevMonth').onclick = async () => {
+  viewHijriMonth--;
+  if (viewHijriMonth < 1) { viewHijriMonth = 12; viewHijriYear--; }
+  await renderCalendarForHijriMonth(viewHijriYear, viewHijriMonth);
+};
+
+document.getElementById('nextMonth').onclick = async () => {
+  viewHijriMonth++;
+  if (viewHijriMonth > 12) { viewHijriMonth = 1; viewHijriYear++; }
+  await renderCalendarForHijriMonth(viewHijriYear, viewHijriMonth);
+};
+
+// ═══════════════════════════════
+//  Start
+// ═══════════════════════════════
+init();
+</script>
+</body>
+</html>
